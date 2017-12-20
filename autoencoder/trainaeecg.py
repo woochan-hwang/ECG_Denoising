@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from torch.autograd import Variable
 import numpy as np
-from datasheet import AE_Input_train, AE_Input_test, AE_Label
+from autoencoder.ae_datasheet import AE_Input_train, AE_Input_test, AE_Label
 
 print("Data imported")
 
