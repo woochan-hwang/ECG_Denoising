@@ -5,8 +5,8 @@ import torch
 import torch.nn as nn
 from torch.autograd import Variable
 import numpy as np
-import matplotlib as plt
-from autoencoder.ae_datasheet import AE_Input_train, AE_Input_test, AE_Label
+import matplotlib.pyplot as plt
+from ae_datasheet import AE_Input_train, AE_Input_test, AE_Label
 
 print("Data imported")
 
@@ -105,7 +105,8 @@ np.save('sae3_5000_train_loss_1.npy',train_loss)
 
 print("Model Saved")
 
-plt.figure(figsize = (10,4))
+# Plot Loss
+plt.figure(figsize = (10,4));
 plt.plot(train_loss[:,1], color='k', linewidth=0.4, linestyle='-', label = 'MSE loss');
 plt.legend(loc = 2);
 plt.title("Loss over Epoch");

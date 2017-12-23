@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from torch.autograd import Variable
 import numpy as np
-from datasheet import AE_Input_train, AE_Input_test, AE_Label
+from ae_datasheet import AE_Input_train, AE_Input_test, AE_Label
 import matplotlib.pyplot as plt
 
 # Load test variable and trained parameters
@@ -51,9 +51,9 @@ plt.title("Comparison between original and denoised(Gaussian and Baseline)");
 plt.show()
 
 # Plot Loss over EPOCH
-train_loss = np.load('sae_15000_train_loss.npy')
+train_loss = np.load('/Users/WoochanH/python/ecgproject/main/sae_15000_train_loss.npy')
 plt.figure(figsize = (10,4))
-plt.plot(train_loss[1000:14999,1], color='k', linewidth=0.4, linestyle='-', label = 'MSE loss');
+plt.plot(train_loss[2000:14999,1], color='k', linewidth=0.4, linestyle='-', label = 'MSE loss');
 plt.legend(loc = 2);
 plt.title("Loss over Epoch");
 
