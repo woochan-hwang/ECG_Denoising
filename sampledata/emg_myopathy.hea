@@ -1,0 +1,7 @@
+emg_myopathy 1 4000 110337
+emg_myopathy.dat 16 10000/mv 16 0 -50 -6380 0 EMG
+# <age>: 57 <sex>: M
+# <diagnoses>: myopathy due to long history of polymostis
+# <medications>: steroids, low-dose methotrexate
+# EMG from 25mm concentric needle electrode placed in tibialis anterior muscle
+# patient dorsiflexed the foot gently against resistance, then relaxed

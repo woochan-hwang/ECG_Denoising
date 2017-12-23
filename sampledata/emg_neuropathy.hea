@@ -1,0 +1,7 @@
+emg_neuropathy 1 4000 147858
+emg_neuropathy.dat 16 10000/mV 16 0 900 16686 0 EMG
+# <age>: 62 <sex>: M
+# <diagnoses>: chronic low back pain and neuropathy due to a
+#  right L5 radiculopathy
+# EMG from 25mm concentric needle electrode placed in tibialis anterior muscle
+# patient dorsiflexed the foot gently against resistance, then relaxed

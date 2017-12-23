@@ -1,0 +1,5 @@
+emg_healthy 1 4000 50860
+emg_healthy.dat 16 10000/mV 16 0 -333 -29438 0 EMG
+# <age>: 44 <sex>: M <diagnoses> no history of neuromuscular disease
+# EMG from 25mm concentric needle electrode placed in tibialis anterior muscle
+# patient dorsiflexed the foot gently against resistance, then relaxed
