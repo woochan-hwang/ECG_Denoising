@@ -33,36 +33,32 @@ test_data = wfdb.rdsamp("/Users/WoochanH/python/ecgproject/main/sampledata/100",
 # emg_signal = wfdb.rdsamp("/Users/WoochanH/python/ecgproject/sampledata/emg_healthy", sampfrom = t0, sampto = 2*60*360, channels = [0])
 
 # Reshape analouge data = cut into length N by reshaping into ndarray of (total/N, N)
-def Reshape(signal_input, n):
+def pull_signal(signal_input):
     signal = signal_input.p_signals
-    if len(signal) % n == 0:
-        outarray = np.reshape(signal, (len(signal)/n,n))
-    else:
-        print("Not valid N number")
-    return outarray
+    return signal
 
-ecg1 = Reshape(ecg1_data, 1);
-ecg2 = Reshape(ecg2_data, 1);
-ecg3 = Reshape(ecg3_data, 1);
-ecg4 = Reshape(ecg4_data, 1);
-ecg5 = Reshape(ecg5_data, 1);
-ecg6 = Reshape(ecg6_data, 1);
-ecg7 = Reshape(ecg7_data, 1);
-ecg8 = Reshape(ecg8_data, 1);
-ecg9 = Reshape(ecg9_data, 1);
-ecg10 = Reshape(ecg10_data, 1);
-ecg11 = Reshape(ecg11_data, 1);
-ecg12 = Reshape(ecg12_data, 1);
-ecg13 = Reshape(ecg13_data, 1);
-ecg14 = Reshape(ecg14_data, 1);
-ecg15 = Reshape(ecg15_data, 1);
-ecg16 = Reshape(ecg16_data, 1);
-ecg17 = Reshape(ecg17_data, 1);
-ecg18 = Reshape(ecg18_data, 1);
+ecg1 = pull_signal(ecg1_data);
+ecg2 = pull_signal(ecg2_data);
+ecg3 = pull_signal(ecg3_data);
+ecg4 = pull_signal(ecg4_data);
+ecg5 = pull_signal(ecg5_data);
+ecg6 = pull_signal(ecg6_data);
+ecg7 = pull_signal(ecg7_data);
+ecg8 = pull_signal(ecg8_data);
+ecg9 = pull_signal(ecg9_data);
+ecg10 = pull_signal(ecg10_data);
+ecg11 = pull_signal(ecg11_data);
+ecg12 = pull_signal(ecg12_data);
+ecg13 = pull_signal(ecg13_data);
+ecg14 = pull_signal(ecg14_data);
+ecg15 = pull_signal(ecg15_data);
+ecg16 = pull_signal(ecg16_data);
+ecg17 = pull_signal(ecg17_data);
+ecg18 = pull_signal(ecg18_data);
 
 
 train_data_clean = np.concatenate((ecg1, ecg2, ecg3, ecg4, ecg5, ecg6, ecg7, ecg8, ecg9, ecg10, ecg11, ecg12, ecg13, ecg14, ecg15, ecg16, ecg17, ecg18), axis = 0);
-test_data_clean = Reshape(test_data, 1);
+test_data_clean = pull_signal(test_data);
 
 print('Train data raw length: ', np.shape(train_data_clean))
 print('Test data raw length', np.shape(test_data_clean))
