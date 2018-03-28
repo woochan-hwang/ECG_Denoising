@@ -39,6 +39,7 @@ input_dat = data.reformat(input_dat, feature_len = 200, data_form = 1)
 label_dat = data.reformat(label_dat, feature_len = 200, data_form = 1)
 print("Input Data shape: {}".format(np.shape(input_dat)))
 print("Label Data shape: {}".format(np.shape(label_dat)))
+print("CUDA: {}", data.cuda)
 print("Step 0: Data Import Done")
 
 #input_dat = data.undo_reformat(input_dat)
@@ -100,8 +101,6 @@ optimizer = torch.optim.Adam(SAE.parameters(), lr=LR)
 loss_func = nn.MSELoss()
 train_loss = []
 
-if torch.cuda.is_available() == True:
-    SAE = SAE.cuda()
 
 def save_params(save_name):
     dir = '{}/Trained_Params/{}/{}'.format(data.filepath, data.model, save_name)
@@ -117,6 +116,11 @@ def save_params(save_name):
 
 # Train the model
 try:
+    if torch.cuda.is_available() == True:
+        SAE = SAE.cuda()
+        Tensor_Input = Tensor_Input.cuda()
+        Tensor_Label = Tensor_Label.cuda()
+
     print("Step 2: Model Training Start")
 
     for epoch in range(EPOCH):
