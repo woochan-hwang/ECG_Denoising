@@ -155,8 +155,8 @@ try:
     for epoch in range(EPOCH):
         for step, train_data in enumerate(train_loader):
 
-            b_x = Variable(train_data[0])
-            b_y = Variable(train_data[1])
+            b_x = Variable(train_data[0]).cuda()
+            b_y = Variable(train_data[1]).cuda()
 
             en1, de1, en2, de2 = SAE(b_x)
 
