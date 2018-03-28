@@ -103,7 +103,8 @@ class WFDBData(EnvSetter):
     def pull_ecg(self, filename, t0 = 0, tf = int(20 * 360 * 60)):
         temp_data = self.pull_wfdb(filename, t0 = 0, tf = int(30 * 360 * 60))
         if type(temp_data) == tuple:
-            temp_data = temp_data[0]
+            signal = temp_data[0]
+        else:
             signal = temp_data.p_signals
         out_data = np.reshape(signal,(1, len(temp_data)))
         return out_data
@@ -114,7 +115,8 @@ class WFDBData(EnvSetter):
         for temp_data in self.pull_all_wfdb(t0, tf):
             if type(temp_data) == tuple:
                 signal = temp_data[0]
-            signal = temp_data.p_signals
+            else:
+                signal = temp_data.p_signals
             output.append(signal)
         output = np.array(output)
         output = np.reshape(output, (1, np.shape(output)[0]*np.shape(output)[1]))
