@@ -6,10 +6,13 @@ import torch
 import torch.nn as nn
 from torch.autograd import Variable
 import numpy as np
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
 from chicken_selects import *
+
+import matplotlib
+if str(input("x11-backend?(y/n): ")) == 'y':
+    matplotlib.use('GTKAgg')
+    print("GTKAgg backend in use")
+import matplotlib.pyplot as plt
 
 # Object Data('model type', 'motion', noiselevel, cuda = False)
 data = Data('Stacked Autoencoder', 'flexion_extension', 1)
@@ -47,7 +50,8 @@ print("Step 0: Data Import Done")
 #input_dat = data.undo_reformat(input_dat)
 #label_dat = data.undo_reformat(label_dat)
 
-_ = input("Continue(y/n)?: ")
+if str(input("Continue(y/n)?: ")) == 'n':
+    quit()
 
 # Change numpy array to tensor variable
 Tensor_Input = Variable(torch.from_numpy(input_dat).float())
