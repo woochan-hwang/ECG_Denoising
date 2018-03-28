@@ -109,6 +109,10 @@ class WFDBData(EnvSetter):
     def pull_all_ecg(self, t0 = 0, tf = int(30 * 360 * 60)):
         output = []
         for temp in self.pull_all_wfdb(t0, tf):
+            print(temp)
+            print(type(temp))
+            print(dir(temp))
+            _ = input("stop")
             signal = list(temp.p_signals)
             output.append(signal)
         output = np.array(output)
