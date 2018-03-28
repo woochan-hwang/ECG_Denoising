@@ -108,8 +108,8 @@ class WFDBData(EnvSetter):
     # Output raw ecg signal from all .dat files in file_path.
     def pull_all_ecg(self, t0 = 0, tf = int(30 * 360 * 60)):
         output = []
-        for data in self.pull_all_wfdb(t0, tf):
-            signal = list(data.p_signals)
+        for temp in self.pull_all_wfdb(t0, tf):
+            signal = list(temp.p_signals)
             output.append(signal)
         output = np.array(output)
         output = np.reshape(output, (1, np.shape(output)[0]*np.shape(output)[1]))
