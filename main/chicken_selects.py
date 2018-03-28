@@ -26,7 +26,6 @@ import os
 import wfdb
 import torch
 import numpy as np
-from numpy import genfromtxt
 
 # Describing training environment
 class EnvSetter(object):
@@ -170,10 +169,10 @@ class EMGData(EnvSetter):
 
     # Pull individual signals
     def pull_emg(self, filename):
-        return genfromtxt("{}/{}.csv".format(self.get_emg_filepath(), filename), delimiter = ',')
+        return np.genfromtxt("{}/{}.csv".format(self.get_emg_filepath(), filename), delimiter = ',')
 
     def pull_acc(self, filename):
-        acc = genfromtxt("{}/{}.csv".format(self.get_acc_filepath(), filename), delimiter = ',')
+        acc = np.genfromtxt("{}/{}.csv".format(self.get_acc_filepath(), filename), delimiter = ',')
         return acc[:,1:4].transpose()
 
     # Pull all relevant(.csv) signals in folder
@@ -281,7 +280,7 @@ class Processor(EnvSetter):
         return tensor.data.numpy()
 
 
-# Used to create Input/Label data for RNN models
+# Used to create Input/Label data for NN models
 class Data(WFDBData, EMGData, Processor):
 
     def __init__(self, model, motion, noiselevel, cuda = False):
@@ -291,3 +290,27 @@ class Data(WFDBData, EMGData, Processor):
         WFDBData.__init__(self)
         EMGData.__init__(self)
         EnvSetter.__init__(self, cuda)
+
+    def data_splitter(self, input_data, label_data, shuffle = True, ratio = 4):
+        if np.shape(input_data) != np.shape(label_data):
+            print("Data dimensions doesn't match")
+        elif np.shape(input_data)[0] % (ratio + 1) != 0:
+            print("Ratio({}:1) does not fit with data dimension({})".format(ratio, np.shape(input_data)))
+        else:
+            sample_num = np.shape(input_data)[0]
+            tuple, train_set, test_set = [], [], []
+
+        for sample in range(sample_num):
+            tuple.append((input_data[sample], label_data[sample]))
+
+        if shuffle == True:
+            rdn_idx = np.random.choice([1,0], size = (sample_num, ), p = [1-1./(ratio+1), 1./(ratio+1)])
+            for i in range(sample_num):
+                if rdn_idx[i] == 1:
+                    train_set.append(tuple[i])
+                else:
+                    test_set.append(tuple[i])
+        else:
+            [train_set, test_set] = np.vsplit(tuple, [sample_num*(1-1./(ratio+1))])
+
+        return train_set, test_set
