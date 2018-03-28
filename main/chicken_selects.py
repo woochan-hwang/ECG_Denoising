@@ -102,19 +102,19 @@ class WFDBData(EnvSetter):
     # Save raw ecg signal from the wfdb format. 30 min each. 360Hz. 11bit. 10mV.
     def pull_ecg(self, filename, t0 = 0, tf = int(20 * 360 * 60)):
         temp_data = self.pull_wfdb(filename, t0 = 0, tf = int(30 * 360 * 60))
-        temp_data = temp_data.p_signals
-        out_data = np.reshape(temp_data,(1, len(temp_data)))
+        if type(temp_data) == tuple:
+            temp_data = temp_data[0]
+            signal = temp_data.p_signals
+        out_data = np.reshape(signal,(1, len(temp_data)))
         return out_data
 
     # Output raw ecg signal from all .dat files in file_path.
     def pull_all_ecg(self, t0 = 0, tf = int(30 * 360 * 60)):
         output = []
-        for temp in self.pull_all_wfdb(t0, tf):
-            print(temp)
-            print(type(temp))
-            print(dir(temp))
-            _ = input("stop")
-            signal = list(temp.p_signals)
+        for temp_data in self.pull_all_wfdb(t0, tf):
+            if type(temp_data) == tuple:
+                signal = temp_data[0]
+            signal = temp_data.p_signals
             output.append(signal)
         output = np.array(output)
         output = np.reshape(output, (1, np.shape(output)[0]*np.shape(output)[1]))
