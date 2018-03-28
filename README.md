@@ -8,12 +8,13 @@ The clean ECG data has been collected from the MIT-BIH Arrythmia Database[1]. Th
 collected using a myo-band[2] and the myo-data-capture package[3] on top of the clean ECG. The acceleration data has been collected 
 with the EMG data. The current sample uploaded is from a male subject performing flexion_extension motion of the elbow. The EMG was 
 collected from the anterior aspect of the bicepts at the midpoint between the acromioclavicular joint and the antecubital fossa. 
-As the motion arising from the flexion of the biceps are in the forearm, the accelerometer[4] was placed 10cm from the antecubital fossa. 
+As the motion arising from the flexion of the biceps are in the forearm, the accelerometer[4] was placed on the forearm, 10cm from the antecubital fossa. 
 The data was resampled to match the sampling frequency of the myo-band[2].  
 
 The module "chicken_selects" contains tools for opening and preprocessing the data. If the file structure is maintained, it should be able to automatically locate the relevant files easily. Otherwise, there are methods that allow to adjust this as appropriate. The source code has been annotated fairly well to allow easy use. 
 
 Also refer to the two sample codes(sample_sae.py, sample_drdae.py) for initial attempts to train a Neural Network model using this data. 
+To allow result plotting on local display while training on remote machine, enable x11 backend when prompted. 
 
 Implementation of mini-batch training, tensorboard/pytorch_ver are to follow shortly.
 
