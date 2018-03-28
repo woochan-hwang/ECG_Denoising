@@ -6,6 +6,8 @@ import torch
 import torch.nn as nn
 from torch.autograd import Variable
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from chicken_selects import *
 
