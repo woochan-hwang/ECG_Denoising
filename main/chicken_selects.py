@@ -95,7 +95,7 @@ class WFDBData(EnvSetter):
                 name = name[:-4]
                 dat = wfdb.rdsamp("{}/{}".format(self.get_ecg_filepath(), name), sampfrom = t0, sampto = tf, channels = [0])
                 print("wfdb site", type(dat))
-                newlist.append(data)
+                newlist.append(dat)
         print('These are the files[ECG] opened from the dir: {}'.format(namelist))
         return newlist
 
