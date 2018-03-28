@@ -144,6 +144,8 @@ try:
     print("Step 2: Model Training Finished")
 
     # Plot Loss
+    if max(train_loss) > min(train_loss)*100:
+        train_loss = train_loss[int(len(train_loss)/100):end]
     plt.figure(figsize = (10,4));
     plt.plot(train_loss, color='k', linewidth=0.4, linestyle='-', label = 'MSE loss');
     plt.legend(loc = 2);
