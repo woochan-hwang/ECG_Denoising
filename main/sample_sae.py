@@ -21,6 +21,8 @@ data = Data('Stacked Autoencoder', 'flexion_extension', 1)
 if torch.cuda.is_available == True:
     print("Cuda Detected")
     data.cuda_on()
+else:
+    print("Cuda Not Detected")
 
 # Specify directory if you have changed folder name / dir
 data.set_ecg_filepath()
