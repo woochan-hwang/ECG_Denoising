@@ -148,7 +148,7 @@ try:
 
     # Generates mini_batchs for training. Loads data for testing.
     train_loader = loader.DataLoader(dataset = train_set, batch_size = BATCH_SIZE, shuffle = True)
-    t_x, t_y = Variable(test_set[:,0,:]), Variable(test_set[:,1,:])
+    t_x, t_y = Variable(test_set[:,0,:]).cuda(), Variable(test_set[:,1,:]).cuda()
 
     print("Step 2: Model Training Start")
 
