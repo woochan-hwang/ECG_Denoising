@@ -150,6 +150,8 @@ class EMGData(EnvSetter):
         super(EMGData, self).__init__()
         self.emgpath = self.filepath
         self.accpath = self.filepath
+        self.opened_emg = 0
+        self.opened_acc = 0
 
     # Specify filepath for EMG within motherpath
     def set_emg_filepath(self, filepath = 'emgdata'):
@@ -180,7 +182,6 @@ class EMGData(EnvSetter):
         file_path = self.get_emg_filepath()
         items = os.listdir(file_path)
         items.sort()
-        self.opened_emg = len(items)
         newlist = []
         namelist = []
         for name in items:
@@ -190,6 +191,7 @@ class EMGData(EnvSetter):
                 data = self.pull_emg(filename = name)
                 newlist.append(data)
         print('These are the files[EMG] opened from the dir: {}'.format(namelist))
+        self.opened_emg = int(len(namelist))
         signal = np.reshape(np.array(newlist), (1, -1))
         return signal
 
@@ -197,7 +199,6 @@ class EMGData(EnvSetter):
         file_path = self.get_acc_filepath()
         items = os.listdir(file_path)
         items.sort()
-        self.opened_acc = len(items)
         newlist = []
         namelist = []
         for name in items:
@@ -207,6 +208,7 @@ class EMGData(EnvSetter):
                 data = self.pull_acc(filename = name)
                 newlist.append(data)
         print('These are the files[ACC] opened from the dir: {}'.format(namelist))
+        self.opened_acc = int(len(namelist))
         signal = np.reshape(np.array(newlist), (3, -1))
         return signal
 
@@ -306,6 +308,7 @@ class Data(WFDBData, EMGData, Processor):
             tuple.append((input_data[sample], label_data[sample]))
 
         if shuffle == True:
+            np.random.seed(0)
             rdn_idx = np.random.choice([1,0], size = (sample_num, ), p = [1-1./(ratio+1), 1./(ratio+1)])
             for i in range(sample_num):
                 if rdn_idx[i] == 1:

@@ -31,8 +31,12 @@ clean_ecg = data.pull_all_ecg()
 noisy_ecg = data.pull_all_emg()
 acc_dat = data.pull_all_acc()
 
+print(data.opened_acc)
+print(data.opened_emg)
+print(type(data.opened_emg))
+
 # Acc data modified to fit that of noisy emg
-acc_dat = np.array(list(acc_dat[:, 0:6000].transpose())*108*data.opened_emg/data.opened_acc).transpose()
+acc_dat = np.array(list(acc_dat[:, 0:6000].transpose())*int(108*data.opened_emg/data.opened_acc)).transpose()
 # Clean generated from gaussian dist, N(0, 0.05)
 clean_acc = np.random.randn(np.shape(acc_dat)[0], np.shape(acc_dat)[1]) *0.05
 
@@ -62,7 +66,7 @@ EPOCH = int(input("Epochs?: "))
 LR = float(input("Learning rate?: "))
 BATCH_SIZE = int(input("Batch size?: "))
 
-# Generate mini-batch tensors for training / testing
+# Generate tensors for training / testing
 train_set = torch.from_numpy(train_set).float()
 test_set = torch.from_numpy(test_set).float()
 
@@ -113,26 +117,33 @@ loss_func = nn.MSELoss()
 train_loss, test_loss = [], []
 
 
-def save_params(save_name):
-    dir = '{}/Trained_Params/{}/{}'.format(data.filepath, data.model, save_name)
+def save_model(save_name, optim, loss_f, epoch = EPOCH):
+    dir = '{}/Trained_Params/{}/{}_{}'.format(data.filepath, data.model, save_name, epoch)
     if not os.path.exists(dir):
         os.makedirs(dir)
-    torch.save(SAE.encoder1, dir + '/encoder1_{}.pt'.format(EPOCH))
-    torch.save(SAE.decoder1, dir + '/decoder1_{}.pt'.format(EPOCH))
-    torch.save(SAE.encoder2, dir + '/encoder2_{}.pt'.format(EPOCH))
-    torch.save(SAE.decoder2, dir + '/decoder2_{}.pt'.format(EPOCH))
-    np.save(dir + '/trainloss_{}.npy'.format(EPOCH),train_loss)
-    np.save(dir + '/testloss_{}.npy'.format(EPOCH),test_loss)
+    SAE.cpu()
+    data.cuda_off()
+    torch.save({'data_setting': data,
+                'state_dict': SAE.state_dict(),
+                'epoch': epoch,
+                'optimizer': optim,
+                'loss_function': loss_f
+                },
+               dir + '/model.pth')
+    np.save(dir + '/trainloss.npy',train_loss)
+    np.save(dir + '/testloss.npy',test_loss)
     print("Step 3: Model Saved")
 
 
 # Train the model
 try:
+    # Moves data and model to gpu if available
     if data.cuda == True:
-        SAE = SAE.cuda()
-        train_set = test_set.cuda()
-        test_set = test_set.cuda()
+        SAE.cuda()
+        test_set.cuda()
+        test_set.cuda()
 
+    # Generates mini_batchs for training. Loads data for testing.
     train_loader = loader.DataLoader(dataset = train_set, batch_size = BATCH_SIZE, shuffle = True)
     t_x, t_y = Variable(test_set[:,0,:]), Variable(test_set[:,1,:])
 
@@ -151,6 +162,7 @@ try:
             loss.backward()
             optimizer.step()
 
+        # Evaluates current model state on test data set
         _, _, _, pred_y = SAE(t_x)
         loss_test_set = loss_func(pred_y, t_y)
         print('Epoch: {} | train loss: {:.4f} | test loss: {:.4f}'.format(epoch+1, loss.data[0], loss_test_set.data[0]))
@@ -175,8 +187,8 @@ try:
 
     # Save trained Parameters
     if str(input("Save Parameters?(y/n): ")) == 'y':
-        save_name = str(input("Save parameters as?: ")) + '_Interrupted'
-        save_params(save_name)
+        save_name = str(input("Save parameters as?: "))
+        save_model(save_name, 'Adam', 'MSELoss')
         print("End of Session")
     else:
         print("Session Terminated. Parameters not saved")
@@ -186,6 +198,6 @@ except KeyboardInterrupt:
 
     if str(input("Save Parameters?(y/n): ")) == 'y':
         save_name = str(input("Save parameters as?: ")) + '_Interrupted'
-        save_params(save_name)
+        save_model(save_name, 'Adam', 'MSELoss')
     else:
         print("Session Terminated. Parameters not saved")
