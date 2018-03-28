@@ -32,7 +32,7 @@ noisy_ecg = data.pull_all_emg()
 acc_dat = data.pull_all_acc()
 
 # Acc data modified to fit that of noisy emg
-acc_dat = np.array(list(acc_dat[:, 0:6000].transpose())*108*9).transpose()
+acc_dat = np.array(list(acc_dat[:, 0:6000].transpose())*108*data.opened_emg/data.opened_acc).transpose()
 # Clean generated from gaussian dist, N(0, 0.05)
 clean_acc = np.random.randn(np.shape(acc_dat)[0], np.shape(acc_dat)[1]) *0.05
 
@@ -66,9 +66,6 @@ BATCH_SIZE = int(input("Batch size?: "))
 train_set = torch.from_numpy(train_set).float()
 test_set = torch.from_numpy(test_set).float()
 
-t_x, t_y = test_set[:,0,:], test_set[:,1,:]
-print(np.shape(t_x))
-print(t_y)
 
 # Autoencoder Model Structure
 class StackedAutoEncoder(nn.Module):
@@ -113,7 +110,7 @@ print("Step 1: Model Setup Done")
 SAE = StackedAutoEncoder()
 optimizer = torch.optim.Adam(SAE.parameters(), lr=LR)
 loss_func = nn.MSELoss()
-train_loss = []
+train_loss, test_loss = [], []
 
 
 def save_params(save_name):
@@ -125,16 +122,19 @@ def save_params(save_name):
     torch.save(SAE.encoder2, dir + '/encoder2_{}.pt'.format(EPOCH))
     torch.save(SAE.decoder2, dir + '/decoder2_{}.pt'.format(EPOCH))
     np.save(dir + '/trainloss_{}.npy'.format(EPOCH),train_loss)
+    np.save(dir + '/testloss_{}.npy'.format(EPOCH),test_loss)
     print("Step 3: Model Saved")
 
 
 # Train the model
 try:
-    if torch.cuda.is_available() == True:
+    if data.cuda == True:
         SAE = SAE.cuda()
         train_set = test_set.cuda()
+        test_set = test_set.cuda()
 
     train_loader = loader.DataLoader(dataset = train_set, batch_size = BATCH_SIZE, shuffle = True)
+    t_x, t_y = Variable(test_set[:,0,:]), Variable(test_set[:,1,:])
 
     print("Step 2: Model Training Start")
 
@@ -151,18 +151,21 @@ try:
             loss.backward()
             optimizer.step()
 
-            if step == BATCH_SIZE:
-                print('Epoch: ', epoch + 1, '| train loss: %.4f' % loss.data[0])
-                train_loss.append(loss.data[0])
-                
+        _, _, _, pred_y = SAE(t_x)
+        loss_test_set = loss_func(pred_y, t_y)
+        print('Epoch: {} | train loss: {:.4f} | test loss: {:.4f}'.format(epoch+1, loss.data[0], loss_test_set.data[0]))
+        train_loss.append(loss.data[0])
+        test_loss.append(loss_test_set.data[0])
 
     print("Step 2: Model Training Finished")
 
     # Plot Loss
     if max(train_loss) > min(train_loss)*100:
-        train_loss = train_loss[int(len(train_loss)/100):end]
+        train_loss = train_loss[int(len(train_loss)/100):]
+        test_loss = test_loss[int(len(test_loss)/100):]
     plt.figure(figsize = (10,4));
-    plt.plot(train_loss, color='k', linewidth=0.4, linestyle='-', label = 'MSE loss');
+    plt.plot(train_loss, color='k', linewidth=0.4, linestyle='-', label = 'train_set loss');
+    plt.plot(test_loss, color='b', linewidth=0.4, linestyle='-', label = 'test_set loss')
     plt.legend(loc = 2);
     plt.title("Training Loss({} | {} | LR:{})".format(data.model, data.motion, LR));
     plt.xlabel("Epochs")

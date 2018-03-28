@@ -180,6 +180,7 @@ class EMGData(EnvSetter):
         file_path = self.get_emg_filepath()
         items = os.listdir(file_path)
         items.sort()
+        self.opened_emg = len(items)
         newlist = []
         namelist = []
         for name in items:
@@ -196,6 +197,7 @@ class EMGData(EnvSetter):
         file_path = self.get_acc_filepath()
         items = os.listdir(file_path)
         items.sort()
+        self.opened_acc = len(items)
         newlist = []
         namelist = []
         for name in items:
@@ -313,4 +315,4 @@ class Data(WFDBData, EMGData, Processor):
         else:
             [train_set, test_set] = np.vsplit(tuple, [sample_num*(1-1./(ratio+1))])
 
-        return train_set, test_set
+        return np.array(train_set), np.array(test_set)
