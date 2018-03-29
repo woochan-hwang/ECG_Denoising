@@ -16,7 +16,10 @@ The module "chicken_selects" contains tools for opening and preprocessing the da
 Also refer to the two sample codes(sample_sae.py, sample_drdae.py) for initial attempts to train a Neural Network model using this data. 
 To allow result plotting on local display while training on remote machine, enable x11 backend when prompted. 
 
-Implementation of mini-batch training, tensorboard/pytorch_ver are to follow shortly.
+Recent Changes: Mini-batch training has been implemented for sample_sae.py
+                Use chicken_selects.data_splitter() to separate test data from train data.
+
+Implementation of tensorboard/pytorch_ver are to follow shortly.
 
 
 
