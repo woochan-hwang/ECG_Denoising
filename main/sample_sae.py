@@ -1,6 +1,6 @@
 # Sample Stacked denoising autoencoder (2 layers)
 # Note use of chicken_selects module and how to process data imports
-# Written by Woochan H. 
+# Written by Woochan H.
 
 import torch
 import torch.nn as nn
@@ -137,23 +137,27 @@ def save_model(save_name, optim, loss_f, lr, epoch = EPOCH):
 
 # Train the model
 try:
-    # Moves data and model to gpu if available
-    if data.cuda == True:
-        SAE.cuda()
-        train_set.cuda()
-        test_set.cuda()
-
     # Generates mini_batchs for training. Loads data for testing.
     train_loader = loader.DataLoader(dataset = train_set, batch_size = BATCH_SIZE, shuffle = True)
-    t_x, t_y = Variable(test_set[:,0,:]).cuda(), Variable(test_set[:,1,:]).cuda()
+    t_x, t_y = Variable(test_set[:,0,:]), Variable(test_set[:,1,:])
+
+    # Moves data and model to gpu if available
+    if torch.cuda.is_available() == True:
+        SAE.cuda()
+        t_x.cuda()
+        t_y.cuda()
 
     print("Step 2: Model Training Start")
 
     for epoch in range(EPOCH):
         for step, train_data in enumerate(train_loader):
 
-            b_x = Variable(train_data[0]).cuda()
-            b_y = Variable(train_data[1]).cuda()
+            if torch.cuda.is_available() == True:
+                b_x = Variable(train_data[0]).cuda()
+                b_y = Variable(train_data[1]).cuda()
+            else:
+                b_x = Variable(train_data[0])
+                b_y = Variable(train_data[1])
 
             en1, de1, en2, de2 = SAE(b_x)
 
