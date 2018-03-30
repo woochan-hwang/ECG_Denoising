@@ -201,7 +201,7 @@ except KeyboardInterrupt:
     else:
         print("Session Terminated. Parameters not saved")
 
-except _tkinter.TclError:
+except TclError:
     print("_tkinter.TclError")
     try:
         print("_tkinter.TclError, No name error")
