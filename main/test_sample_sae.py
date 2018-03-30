@@ -84,7 +84,7 @@ trained_data = model_params['data_setting']
 trained_epochs = model_params['epoch']
 trained_optim = model_params['optimizer']
 trained_lossf = model_params['loss_function']
-
+trained_lr = model_params['learning_rate']
 
 # Load data in the same setting used for training
 # Call data into numpy array format. Check soure code for additional input specifications
@@ -171,7 +171,7 @@ plt.figure(figsize = (10,4));
 plt.plot(train_loss, color='k', linewidth=0.4, linestyle='-', label = 'train_set loss');
 plt.plot(test_loss, color='b', linewidth=0.4, linestyle='-', label = 'test_set loss')
 plt.legend(loc = 2);
-plt.title("Training Loss({} | {} | LR:{})".format(data.model, data.motion, LR));
+plt.title("Training Loss({} | {} | LR:{})".format(trained_data.model, trained_data.motion, trained_lr));
 plt.xlabel("Epochs")
 plt.ylabel("Loss")
 

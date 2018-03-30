@@ -1,7 +1,7 @@
 '''
 Data retreival and preprocessing for specific training environments
 
-Written by Woochan H. (Last Revised 28/03/18)
+Written by Woochan H.
 
 This module allows you to conveniently open and process data objects for specific environment settings.
 It will automatically set CUDA, file directory settings accordingly with minimal effort.
@@ -222,8 +222,8 @@ class Processor(EnvSetter):
 
     # Change data format to specified form / length
     # Format 1: <ECG..., X..., Y..., Z...>; each * feature_len
-    # Format 2: in process
     # Total lenght being 4 * feature_len
+    # Format 2: <Sample num, 4, feature_len>
     def reformat(self, data, data_form = 0, feature_len = 0):
         self.format = data_form
         self.feature_len = feature_len
@@ -235,7 +235,7 @@ class Processor(EnvSetter):
                 output = self.format1(data, feature_len)
             elif data_form == 2:
                 print('Format 2 unavailable at the moment')
-#                output = _format2(data, feature_len)
+                output = self.format2(data, feature_len)
             else:
                 print("Undefined format type")
         return output
@@ -247,7 +247,7 @@ class Processor(EnvSetter):
             output = self.undo_format1(data, self.feature_len)
         elif self.format == 2:
             print('Format 2 unavailable at the moment')
-#            output = _undo_format2(data, self.feature_len)
+            output = self.undo_format2(data, self.feature_len)
         else:
             print('Unalbe to undo format')
         return output
@@ -275,6 +275,27 @@ class Processor(EnvSetter):
             output[1, k*i:k*(i+1)] = npver[i, k:2*k]
             output[2, k*i:k*(i+1)] = npver[i, 2*k:3*k]
             output[3, k*i:k*(i+1)] = npver[i, 3*k:4*k]
+        return np.array(output)
+
+    def format2(self, input_arr, feature_len):
+        l = int(np.shape(input_arr)[1])
+        k = int(feature_len)
+        sample_num = int(l / feature_len)
+        t_0 = input_arr[:, k*(0):k*(1)]
+        for i in range(1,sample_num):
+            t_1 = input_arr[:, k*(i):k*(i+1)]
+            output = np.stack((t_0,t_1), axis = 0)
+            t_0 = output
+        return np.array(output)
+
+    def undo_format2(self, npver, feature_len):
+        k = int(feature_len)
+        sample_num = np.shape(npver)[0]
+        sig_len = sample_num*k
+        t_0 = npver[0]
+        for i in range(1,sample_num):
+            output = np.concatenate(t_0, npver[i])
+            t_0 = output
         return np.array(output)
 
     # Formating into tensors usable in PyTorch. This is currently NOT wrapped in a Variable
