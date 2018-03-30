@@ -157,12 +157,12 @@ try:
 
             b_x = Variable(train_data[0])
             b_y = Variable(train_data[1])
-            print(type(b_x))
+            print(type(type(b_x)))
 
             if data.cuda == True:
                 b_x.cuda()
                 b_y.cuda()
-            print(type(b_x))
+            print(type(type(b_x)))
 
             en1, de1, en2, de2 = SAE(b_x)
 
