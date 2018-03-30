@@ -33,8 +33,6 @@ while os.path.exists(params_dir) == False:
     print("Following Trained parameters available:{}".format(items))
     save_name = str(input("[Try Again] Which would you like to load?: "))
     params_dir = '{}/{}/model.pth'.format(dir, save_name)
-    train_loss = np.load('{}/{}/trainloss.npy'.format(dir,save_name))
-    test_loss = np.load('{]/{}/testloss.npy'.format(dir,save_name))
 
 # Define Model Structure. Should be same as one used for Training
 class StackedAutoEncoder(nn.Module):
@@ -75,6 +73,8 @@ class StackedAutoEncoder(nn.Module):
 
 # Loads model and model parameters
 model_params = torch.load(params_dir)
+train_loss = np.load('{}/{}/trainloss.npy'.format(dir,save_name))
+test_loss = np.load('{]/{}/testloss.npy'.format(dir,save_name))
 mymodel = StackedAutoEncoder()
 mymodel.load_state_dict(model_params['state_dict'])
 print("Step 0: Model Structure and Parameter Loaded")
