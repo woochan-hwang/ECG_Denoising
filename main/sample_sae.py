@@ -203,19 +203,14 @@ except KeyboardInterrupt:
 
 except _tkinter.TclError:
     print("_tkinter.TclError")
-    if str(input("Save Parameters?(y/n): ")) == 'y':
-        save_name = str(input("Save parameters as?: ")) + '_Interrupted'
-        save_model(save_name, 'Adam', 'MSELoss', LR)
-    else:
-        print("Session Terminated. Parameters not saved")
-
-except TclError:
-    print("TclError")
-    if str(input("Save Parameters?(y/n): ")) == 'y':
-        save_name = str(input("Save parameters as?: ")) + '_Interrupted'
-        save_model(save_name, 'Adam', 'MSELoss', LR)
-    else:
-        print("Session Terminated. Parameters not saved")
+    try:
+        print("_tkinter.TclError, No name error")
+    except NameError:
+        if str(input("Save Parameters?(y/n): ")) == 'y':
+            save_name = str(input("Save parameters as?: ")) + '_Interrupted'
+            save_model(save_name, 'Adam', 'MSELoss', LR)
+        else:
+            print("Session Terminated. Parameters not saved")
 
 else:
     if str(input("Save Parameters?(y/n): ")) == 'y':
