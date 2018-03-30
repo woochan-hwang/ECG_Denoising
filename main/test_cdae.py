@@ -114,9 +114,9 @@ i_x, i_y = Variable(torch.from_numpy(train_set[:,0,:]).float()), train_set[:,1,:
 t_x, t_y = Variable(torch.from_numpy(val_set[:,0,:]).float()), val_set[:,1,:]
 
 # Evaluate model on train data
-_, _, _, pred_i_y = mymodel(i_x)
+pred_i_y = mymodel(i_x)
 # Evaluate model on val data
-_, _, _, pred_t_y = mymodel(t_x)
+pred_t_y = mymodel(t_x)
 print("Step 2: Model Evaluation Finished")
 
 
