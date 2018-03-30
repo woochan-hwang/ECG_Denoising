@@ -19,7 +19,6 @@ import matplotlib.pyplot as plt
 data = Data('Stacked Autoencoder', 'flexion_extension', 1)
 
 if torch.cuda.is_available() == True:
-    print("Cuda Detected")
     data.cuda_on()
 else:
     print("Cuda Not Detected")
@@ -141,7 +140,7 @@ def save_model(save_name, optim, loss_f, epoch = EPOCH):
 # Train the model
 try:
     # Moves data and model to gpu if available
-    if torch.cuda.is_available() == True:
+    if data.cuda == True:
         SAE.cuda()
         test_set.cuda()
         test_set.cuda()

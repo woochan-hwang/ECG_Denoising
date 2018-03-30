@@ -33,6 +33,8 @@ while os.path.exists(params_dir) == False:
     print("Following Trained parameters available:{}".format(items))
     save_name = str(input("[Try Again] Which would you like to load?: "))
     params_dir = '{}/{}/model.pth'.format(dir, save_name)
+    train_loss = np.load('{}/{}/trainloss.npy'.format(dir,save_name))
+    test_loss = np.load('{]/{}/testloss.npy'.format(dir,save_name))
 
 # Define Model Structure. Should be same as one used for Training
 class StackedAutoEncoder(nn.Module):
@@ -138,13 +140,17 @@ tf = t0 + int(input("Plotting | Duration?: "))
 i_x, i_y, pred_i_y = i_x[0,t0:tf], i_y[0,t0:tf], pred_i_y[0,t0:tf]
 t_x, t_y, pred_t_y = t_x[0,t0:tf], t_y[0,t0:tf], pred_t_y[0,t0:tf]
 
+train_loss = np.average(train_loss[-50:])
+test_loss = np.average(test_loss[-50:])
+
+
 # Plot Results
 #plt.figure(figsize = (10,4));
 fig, (ax1, ax2) = plt.subplots(2, sharey=True)
 ax1.plot(pred_i_y, color='b', linewidth=0.4, linestyle='-', label = 'denoised ecg')
 ax1.plot(i_y, color='k', linewidth=0.4, linestyle='-', label = 'clean ecg')
 ax1.plot(i_x, color='r', linewidth=0.2, linestyle='-', label = 'noisy ecg')
-ax1.set(title='Model Output | after epochs: {}'.format(trained_epochs),
+ax1.set(title='Model Output | after epochs: {} | train_loss: {}'.format(trained_epochs, train_loss),
         ylabel='train set')
 ax1.legend(loc = 2)
 
