@@ -174,6 +174,22 @@ try:
 
     print("Step 2: Model Training Finished")
 
+    # Save trained Parameters
+except KeyboardInterrupt:
+
+    if str(input("Save Parameters?(y/n): ")) == 'y':
+        save_name = str(input("Save parameters as?: ")) + '_Interrupted'
+        save_model(save_name, 'Adam', 'MSELoss', LR)
+    else:
+        print("Session Terminated. Parameters not saved")
+
+else:
+    if str(input("Save Parameters?(y/n): ")) == 'y':
+        save_name = str(input("Save parameters as?: "))
+        save_model(save_name, 'Adam', 'MSELoss', LR)
+    else:
+        print("Parameters not saved")
+
     # Plot Loss
     threshold_train = 20*min(train_loss)
     threshold_test = 20*min(test_loss)
@@ -191,30 +207,3 @@ try:
     plt.ylabel("Loss")
 
     plt.show()
-
-    # Save trained Parameters
-except KeyboardInterrupt:
-
-    if str(input("Save Parameters?(y/n): ")) == 'y':
-        save_name = str(input("Save parameters as?: ")) + '_Interrupted'
-        save_model(save_name, 'Adam', 'MSELoss', LR)
-    else:
-        print("Session Terminated. Parameters not saved")
-
-except TclError:
-    print("_tkinter.TclError")
-    try:
-        print("_tkinter.TclError, No name error")
-    except NameError:
-        if str(input("Save Parameters?(y/n): ")) == 'y':
-            save_name = str(input("Save parameters as?: ")) + '_Interrupted'
-            save_model(save_name, 'Adam', 'MSELoss', LR)
-        else:
-            print("Session Terminated. Parameters not saved")
-
-else:
-    if str(input("Save Parameters?(y/n): ")) == 'y':
-        save_name = str(input("Save parameters as?: "))
-        save_model(save_name, 'Adam', 'MSELoss', LR)
-    else:
-        print("Session Terminated. Parameters not saved")
