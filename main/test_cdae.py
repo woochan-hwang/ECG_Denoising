@@ -108,10 +108,9 @@ print("Step 1: Data Import Done")
 if str(input("Continue(y/n)?: ")) == 'n':
     quit()
 
-
 # Generate tensors for training / validation
-i_x, i_y = Variable(torch.from_numpy(train_set[:,0,:]).float()), train_set[:,1,:]
-t_x, t_y = Variable(torch.from_numpy(val_set[:,0,:]).float()), val_set[:,1,:]
+i_x, i_y = Variable(torch.from_numpy(train_set[:,0:1,:,:]).float()), train_set[:,1:2,:,:]
+t_x, t_y = Variable(torch.from_numpy(val_set[:,0:1,:,:]).float()), val_set[:,1:2,:,:]
 
 # Evaluate model on train data
 pred_i_y = mymodel(i_x)
