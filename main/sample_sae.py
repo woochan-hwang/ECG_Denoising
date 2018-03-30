@@ -1,6 +1,6 @@
 # Sample Stacked denoising autoencoder (2 layers)
 # Note use of chicken_selects module and how to process data imports
-# Written by Woochan H. (Last modified: 26/03/18)
+# Written by Woochan H. 
 
 import torch
 import torch.nn as nn
