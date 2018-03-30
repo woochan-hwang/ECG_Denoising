@@ -143,7 +143,7 @@ try:
     # Moves data and model to gpu if available
     if data.cuda == True:
         SAE.cuda()
-        test_set.cuda()
+        train_set.cuda()
         test_set.cuda()
 
     # Generates mini_batchs for training. Loads data for testing.
@@ -155,8 +155,12 @@ try:
     for epoch in range(EPOCH):
         for step, train_data in enumerate(train_loader):
 
-            b_x = Variable(train_data[0]).cuda()
-            b_y = Variable(train_data[1]).cuda()
+            b_x = Variable(train_data[0])
+            b_y = Variable(train_data[1])
+
+            if data.cuda == True:
+                b_x.cuda()
+                b_y.cuda()
 
             en1, de1, en2, de2 = SAE(b_x)
 
@@ -193,14 +197,6 @@ try:
     plt.show()
 
     # Save trained Parameters
-    if str(input("Save Parameters?(y/n): ")) == 'y':
-        save_name = str(input("Save parameters as?: "))
-        save_model(save_name, 'Adam', 'MSELoss', LR)
-        print("End of Session")
-    else:
-        print("Session Terminated. Parameters not saved")
-
-
 except KeyboardInterrupt:
 
     if str(input("Save Parameters?(y/n): ")) == 'y':
