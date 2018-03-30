@@ -119,7 +119,7 @@ loss_func = nn.MSELoss()
 train_loss, test_loss = [], []
 
 
-def save_model(save_name, optim, loss_f, epoch = EPOCH):
+def save_model(save_name, optim, loss_f, lr, epoch = EPOCH):
     dir = '{}/Trained_Params/{}/{}_{}'.format(data.filepath, data.model, save_name, epoch)
     if not os.path.exists(dir):
         os.makedirs(dir)
@@ -129,7 +129,8 @@ def save_model(save_name, optim, loss_f, epoch = EPOCH):
                 'state_dict': SAE.state_dict(),
                 'epoch': epoch,
                 'optimizer': optim,
-                'loss_function': loss_f
+                'loss_function': loss_f,
+                'learning_rate': lr
                 },
                dir + '/model.pth')
     np.save(dir + '/trainloss.npy',train_loss)
@@ -174,9 +175,13 @@ try:
     print("Step 2: Model Training Finished")
 
     # Plot Loss
-    if max(train_loss) > min(train_loss)*100:
-        train_loss = train_loss[int(len(train_loss)/100):]
-        test_loss = test_loss[int(len(test_loss)/100):]
+    threshold_train = 20*min(train_loss)
+    threshold_test = 20*min(test_loss)
+    for i in range(len(train_loss)):
+        if train_loss[i] > threshold_train:
+            train_loss[i] = threshold_train
+        if test_loss[i] > threshold_test:
+            test_loss[i] = threshold_test
     plt.figure(figsize = (10,4));
     plt.plot(train_loss, color='k', linewidth=0.4, linestyle='-', label = 'train_set loss');
     plt.plot(test_loss, color='b', linewidth=0.4, linestyle='-', label = 'test_set loss')
@@ -190,7 +195,7 @@ try:
     # Save trained Parameters
     if str(input("Save Parameters?(y/n): ")) == 'y':
         save_name = str(input("Save parameters as?: "))
-        save_model(save_name, 'Adam', 'MSELoss')
+        save_model(save_name, 'Adam', 'MSELoss', LR)
         print("End of Session")
     else:
         print("Session Terminated. Parameters not saved")
@@ -200,6 +205,13 @@ except KeyboardInterrupt:
 
     if str(input("Save Parameters?(y/n): ")) == 'y':
         save_name = str(input("Save parameters as?: ")) + '_Interrupted'
-        save_model(save_name, 'Adam', 'MSELoss')
+        save_model(save_name, 'Adam', 'MSELoss', LR)
+    else:
+        print("Session Terminated. Parameters not saved")
+
+else:
+    if str(input("Save Parameters?(y/n): ")) == 'y':
+        save_name = str(input("Save parameters as?: "))
+        save_model(save_name, 'Adam', 'MSELoss', LR)
     else:
         print("Session Terminated. Parameters not saved")

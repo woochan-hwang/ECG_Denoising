@@ -88,6 +88,12 @@ trained_lossf = model_params['loss_function']
 
 # Load data in the same setting used for training
 # Call data into numpy array format. Check soure code for additional input specifications
+if str(input("Was it trained on this machine(y/n)?: ")) != 'y':
+    trained_data.default_filepath()
+    trained_data.set_ecg_filepath()
+    trained_data.set_emg_filepath()
+    trained_data.set_acc_filepath()
+
 clean_ecg = trained_data.pull_all_ecg()
 noisy_ecg = trained_data.pull_all_emg()
 acc_dat = trained_data.pull_all_acc()
@@ -145,12 +151,11 @@ test_loss = np.average(test_loss[-50:])
 
 
 # Plot Results
-#plt.figure(figsize = (10,4));
 fig, (ax1, ax2) = plt.subplots(2, sharey=True)
 ax1.plot(pred_i_y, color='b', linewidth=0.4, linestyle='-', label = 'denoised ecg')
 ax1.plot(i_y, color='k', linewidth=0.4, linestyle='-', label = 'clean ecg')
 ax1.plot(i_x, color='r', linewidth=0.2, linestyle='-', label = 'noisy ecg')
-ax1.set(title='Model Output | after epochs: {} | train_loss: {}'.format(trained_epochs, train_loss),
+ax1.set(title='Model Output | after epochs: {} | train_loss: {:.4f}'.format(trained_epochs, train_loss),
         ylabel='train set')
 ax1.legend(loc = 2)
 
@@ -161,5 +166,17 @@ ax2.set(xlabel ='time(s, {} to {})'.format(t0,tf), ylabel='test set')
 ax2.legend(loc = 2)
 
 plt.show()
+
+plt.figure(figsize = (10,4));
+plt.plot(train_loss, color='k', linewidth=0.4, linestyle='-', label = 'train_set loss');
+plt.plot(test_loss, color='b', linewidth=0.4, linestyle='-', label = 'test_set loss')
+plt.legend(loc = 2);
+plt.title("Training Loss({} | {} | LR:{})".format(data.model, data.motion, LR));
+plt.xlabel("Epochs")
+plt.ylabel("Loss")
+
+plt.show()
+
+
 
 print("Session Terminated. Parameters not saved")

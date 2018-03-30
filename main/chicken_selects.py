@@ -188,7 +188,8 @@ class EMGData(EnvSetter):
             if name.endswith(".csv"):
                 namelist.append(name)
                 name = name[:-4]
-                data = self.pull_emg(filename = name)
+                data = list(self.pull_emg(filename = name))
+                print("loaded {}".format(name))
                 newlist.append(data)
         print('These are the files[EMG] opened from the dir: {}'.format(namelist))
         self.opened_emg = int(len(namelist))
