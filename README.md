@@ -16,9 +16,17 @@ The module "chicken_selects" contains tools for opening and preprocessing the da
 Also refer to the two sample codes(sample_sae.py, sample_drdae.py) for initial attempts to train a Neural Network model using this data. 
 To allow result plotting on local display while training on remote machine, enable x11 backend when prompted. 
 
-**Recent Changes:** Mini-batch training has been implemented for sample_sae.py. Use chicken_selects.data_splitter() to separate test data from train data.
+To test the trained parameters of a model, refer to the sample code(test_sample_sae.py) which will allow plotting of the results with minimal hassle. 
 
-Implementation of tensorboard/pytorch_ver are to follow shortly.
+
+**Available Models**
+* sample_sae: 2 layer stacked contractive denoising autoencoder
+* sample_drdae: deep recurrent denoising autoencoder
+* cdae: convolutional denoising autoencoder
+
+**Recent Changes:** Mini-batch training has been implemented for sample_sae.py. Use chicken_selects.data_splitter() to separate test data from train data. Also notice the difference in the input data shape between the stacked ae and convolutional ae.  
+
+Implementation of tensorboard(pytorch_ver) are to follow shortly.
 
 
 
