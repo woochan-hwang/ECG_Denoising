@@ -170,15 +170,15 @@ class EMGData(EnvSetter):
         return self.accpath
 
     # Pull individual signals
-    def pull_emg(self, filename):
-        return np.genfromtxt("{}/{}.csv".format(self.get_emg_filepath(), filename), delimiter = ',')
+    def pull_emg(self, filename, tf = 648000):
+        return np.genfromtxt("{}/{}.csv".format(self.get_emg_filepath(), filename), delimiter = ',')[0:tf]
 
     def pull_acc(self, filename):
         acc = np.genfromtxt("{}/{}.csv".format(self.get_acc_filepath(), filename), delimiter = ',')
         return acc[:,1:4].transpose()
 
     # Pull all relevant(.csv) signals in folder
-    def pull_all_emg(self):
+    def pull_all_emg(self, tf = 648000):
         file_path = self.get_emg_filepath()
         items = os.listdir(file_path)
         items.sort()
@@ -188,7 +188,7 @@ class EMGData(EnvSetter):
             if name.endswith(".csv"):
                 namelist.append(name)
                 name = name[:-4]
-                data = list(self.pull_emg(filename = name))
+                data = list(self.pull_emg(filename = name, tf = tf))
                 print("loaded {}".format(name))
                 newlist.append(data)
         print('These are the files[EMG] opened from the dir: {}'.format(namelist))
