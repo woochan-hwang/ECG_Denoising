@@ -1,8 +1,5 @@
-# Convolutional denoising autoencoder (2 layers)
+# Convolutional denoising autoencoder for ECGs
 # Written by Woochan H.
-
-# In this model I changed the denoising objective to just reconstruct the ecg
-# without the clean acc as in previous models.
 
 import torch
 import torch.nn as nn
@@ -17,57 +14,29 @@ if str(input("x11-backend?(y/n): ")) == 'y':
     print("GTKAgg backend in use")
 import matplotlib.pyplot as plt
 
-# Object Data('model type', 'motion', noiselevel, cuda = False)
-data = Data('Convolutional Autoencoder', 'flexion_extension', 1)
+if str(input("Continue Training from pretrained model(y/n)?: ")) == 'y':
 
-if torch.cuda.is_available() == True:
-    data.cuda_on()
-else:
-    print("Cuda Not Detected")
+    # Checks file for appropirate model and prints availabe trained parameters
+    if str(input("Load Conv Autoencoder model?(y/n): ")) == 'y':
+        dir = "{}/Trained_Params/{}".format(os.getcwd(), 'Convolutional Autoencoder')
+        if not os.path.exists(dir):
+            print("Model does NOT exist. Please check")
+            quit()
+    items = os.listdir(dir)
+    print("Following Trained parameters available:{}".format(items))
 
-# Specify directory if you have changed folder name / dir
-data.set_ecg_filepath()
-data.set_emg_filepath()
-data.set_acc_filepath()
+    # Sets parameter directory
+    save_name = str(input("Which would you like to load?: "))
+    params_dir = '{}/{}/model.pth'.format(dir, save_name)
 
-# Call data into numpy array format. Check soure code for additional input specifications
-clean_ecg = data.pull_all_ecg()
-noisy_ecg = data.pull_all_emg()
-acc_dat = data.pull_all_acc()
-
-# Acc data modified to fit that of noisy emg
-acc_dat = np.array(list(acc_dat[:, 0:6000].transpose())*int(108*data.opened_emg/data.opened_acc)).transpose()
-# Clean generated from gaussian dist, N(0, 0.05)
-clean_acc = np.random.randn(np.shape(acc_dat)[0], np.shape(acc_dat)[1]) *0.05
-
-# Add ACC data onto clean/noisy ecg data
-input_dat = np.vstack((noisy_ecg, acc_dat))
-label_dat = np.vstack((clean_ecg, clean_acc))
-
-# Note Use of data_form = 2, which gives a 2D output for each training sample
-input_dat = data.reformat(input_dat, feature_len = 300, data_form = 2)
-label_dat = data.reformat(label_dat, feature_len = 300, data_form = 2)
-print("Input Data shape: {}".format(np.shape(input_dat)))
-print("Label Data shape: {}".format(np.shape(label_dat)))
-
-train_set, val_set = data.data_splitter(input_dat, label_dat, shuffle = True, ratio = 4)
-print(np.shape(train_set))
-print(np.shape(val_set))
-
-print("CUDA: {}".format(data.cuda))
-print("Step 0: Data Import Done")
+    # Enforce correct directory selection
+    while os.path.exists(params_dir) == False:
+        print("Following Trained parameters available:{}".format(items))
+        save_name = str(input("[Try Again] Which would you like to load?: "))
+        params_dir = '{}/{}/model.pth'.format(dir, save_name)
 
 if str(input("Continue(y/n)?: ")) == 'n':
     quit()
-
-# Hyper Parameters
-EPOCH = int(input("Epochs?: "))
-LR = float(input("Learning rate?: "))
-BATCH_SIZE = int(input("Batch size?: "))
-
-# Generate tensors for training / validation
-train_set = torch.from_numpy(train_set).float()
-val_set = torch.from_numpy(val_set).float()
 
 
 # Autoencoder Model Structure
@@ -97,24 +66,71 @@ class ConvAutoEncoder(nn.Module):
         x = self.decoder(x)
         return x
 
+# Loads model and model parameters
+model_params = torch.load(params_dir)
+CAE = ConvAutoEncoder()
+CAE.load_state_dict(model_params['state_dict'])
+train_loss, val_loss = [], []
+
+# Additional information about trained instance
+trained_data = model_params['data_setting']
 print("Step 1: Model Setup Done")
 
-# Setting of Loss function and optimizer
-CAE = ConvAutoEncoder()
+# Load data in the same setting apart from using harder EMG samples
+# Call data into numpy array format. Check soure code for additional input specifications
+trained_data.default_filepath()
+trained_data.set_ecg_filepath()
+trained_data.set_emg_filepath(filepath = 'H_emgdata')
+trained_data.set_acc_filepath()
+
+clean_ecg = trained_data.pull_all_ecg()
+noisy_ecg = trained_data.pull_all_emg()
+acc_dat = trained_data.pull_all_acc()
+
+# Acc data modified to fit that of noisy emg. Adjust for increasing EMG ratio
+acc = np.array(list(acc_dat[:, 0:6000].transpose()))
+acc_dat = np.array((list(acc) + list(acc*1.4) +list(acc*1.7)+ list(acc*2))*int(27*trained_data.opened_emg/trained_data.opened_acc)).transpose()
+
+# Clean generated from gaussian dist, N(0, 0.05)
+clean_acc = np.random.randn(np.shape(acc_dat)[0], np.shape(acc_dat)[1]) *0.05
+
+# Add ACC data onto clean/noisy ecg data
+input_dat = np.vstack((noisy_ecg, acc_dat))
+label_dat = np.vstack((clean_ecg, clean_acc))
+
+# Reformat to shape that can be imported to neural net
+input_dat = trained_data.reformat(input_dat, feature_len = trained_data.feature_len, data_form = trained_data.format)
+label_dat = trained_data.reformat(label_dat, feature_len = trained_data.feature_len, data_form = trained_data.format)
+
+train_set, val_set = trained_data.data_splitter(input_dat, label_dat, shuffle = True, ratio = 4)
+
+# Generate tensors for training / validation
+train_set = torch.from_numpy(train_set).float()
+val_set = torch.from_numpy(val_set).float()
+print("Step 2: Data Import Done")
+
+if str(input("Continue(y/n)?: ")) == 'n':
+    quit()
+
+
+# Hyper Parameters
+EPOCH = int(input("Epochs?: "))
+LR = float(input("Learning rate?: "))
+BATCH_SIZE = int(input("Batch size?: "))
+
 if torch.cuda.is_available() == True:
     CAE = CAE.cuda()
 optimizer = torch.optim.Adam(CAE.parameters(), lr=LR, weight_decay=1e-5)
 loss_func = nn.MSELoss()
-train_loss, val_loss = [], []
 
 
+# Save model function
 def save_model(save_name, optim, loss_f, lr, epoch = EPOCH):
-    dir = '{}/Trained_Params/{}/{}_{}'.format(data.filepath, data.model, save_name, epoch)
+    dir = '{}/Trained_Params/{}/{}_{}'.format(trained_data.filepath, trained_data.model, save_name, epoch)
     if not os.path.exists(dir):
         os.makedirs(dir)
     CAE.cpu()
-    data.cuda_off()
-    torch.save({'data_setting': data,
+    torch.save({'data_setting': trained_data,
                 'state_dict': CAE.state_dict(),
                 'epoch': epoch,
                 'optimizer': optim,
@@ -124,7 +140,7 @@ def save_model(save_name, optim, loss_f, lr, epoch = EPOCH):
                dir + '/model.pth')
     np.save(dir + '/trainloss.npy',train_loss)
     np.save(dir + '/valloss.npy',val_loss)
-    print("Step 3: Model Saved")
+    print("Step 4: Model Saved")
 
 
 # Train the model
@@ -136,7 +152,6 @@ try:
 
     # Moves data and model to gpu if available
     if torch.cuda.is_available() == True:
-        CAE.cuda()
         t_x = t_x.cuda()
         t_y = t_y.cuda()
 
@@ -161,7 +176,7 @@ try:
         # Evaluates current model state on val data set
         pred_y = CAE(t_x)
         loss_val_set = loss_func(pred_y, t_y)
-        print('Epoch: {} | train loss: {:.4f} | val loss: {:.4f}'.format(epoch+1, loss.data[0], loss_val_set.data[0]))
+        print('Epoch: {} | train loss: {:.6f} | val loss: {:.6f}'.format(epoch+1, loss.data[0], loss_val_set.data[0]))
         train_loss.append(loss.data[0])
         val_loss.append(loss_val_set.data[0])
 
@@ -195,7 +210,7 @@ else:
     plt.plot(train_loss, color='k', linewidth=0.4, linestyle='-', label = 'train_set loss');
     plt.plot(val_loss, color='b', linewidth=0.4, linestyle='-', label = 'val_set loss')
     plt.legend(loc = 2);
-    plt.title("Training Loss({} | {} | LR:{})".format(data.model, data.motion, LR));
+    plt.title("FineTune: Training Loss({} | {} | LR:{})".format(trained_data.model, trained_data.motion, LR));
     plt.xlabel("Epochs")
     plt.ylabel("Loss")
 
