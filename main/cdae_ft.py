@@ -96,10 +96,10 @@ else:
     k = 27
     acc = np.array(list(acc_dat[:, 0:6000].transpose()))
 noisy_ecg = trained_data.pull_all_emg()
-
+print("noisy_ecg shape: {}".format(np.shape(noisy_ecg)))
 # Acc data modified to fit that of noisy emg. Adjust for increasing EMG ratio
-acc = np.array(list(acc_dat[:, 0:24000].transpose()))
 acc_dat = np.array((list(acc) + list(acc*1.4) +list(acc*1.7)+ list(acc*2))*int(k*trained_data.opened_emg/trained_data.opened_acc)).transpose()
+print("acc shape: {}".format(np.shape(acc_dat)))
 
 # Clean generated from gaussian dist, N(0, 0.05)
 clean_acc = np.random.randn(np.shape(acc_dat)[0], np.shape(acc_dat)[1]) *0.05
