@@ -161,13 +161,16 @@ while plot == 'y':
     plot = str(input("Plot again(y/n)?: "))
 
 
-loss = plt.figure(figsize = (10,4));
-loss.plot(train_loss, color='k', linewidth=0.4, linestyle='-', label = 'train_set loss');
-loss.plot(val_loss, color='b', linewidth=0.4, linestyle='-', label = 'val_set loss')
-loss.legend(loc = 2);
-loss.title("Training Loss({} | {} | LR:{})".format(trained_data.model, trained_data.motion, trained_lr));
-loss.xlabel("Epochs")
-loss.ylabel("Loss")
+loss, (t1, t2) = plt.subplots(2, sharey=True)
+t1.plot(train_loss, color='k', linewidth=0.4, linestyle='-', label = 'train_set loss');
+t1.legend(loc = 2);
+t1.title("{} | {} | LR:{})".format(trained_data.model, trained_data.motion, trained_lr));
+t1.ylabel("Train Loss")
+
+t2.plot(val_loss, color='b', linewidth=0.4, linestyle='-', label = 'val_set loss')
+t2.legend(loc = 2);
+t2.xlabel("Epochs")
+t2.ylabel("Val Loss")
 
 plt.show()
 
