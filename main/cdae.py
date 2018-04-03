@@ -143,8 +143,6 @@ try:
     for epoch in range(EPOCH):
         for step, train_data in enumerate(train_loader):
 
-#            print("train_data", train_data.size())
-
             if torch.cuda.is_available() == True:
                 b_x = Variable(train_data[:,0:1,:,:]).cuda()
                 b_y = Variable(train_data[:,1:2,:,:]).cuda()
@@ -152,10 +150,7 @@ try:
                 b_x = Variable(train_data[:,0:1,:,:])
                 b_y = Variable(train_data[:,1:2,:,:])
 
-#            print("b_x:", b_x.size())
             de = CAE(b_x)
-
-#            print("de:", de.size())
             loss = loss_func(de, b_y)
             optimizer.zero_grad()
             loss.backward()
