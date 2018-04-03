@@ -128,33 +128,38 @@ t_x = trained_data.undo_reformat(t_x.data.numpy())
 i_y = trained_data.undo_reformat(i_y)
 t_y = trained_data.undo_reformat(t_y)
 
-print("Available data lenght: {}".format(np.shape(t_y)))
-t0 = int(input("Plotting | Start time?: "))
-tf = t0 + int(input("Plotting | Duration?: "))
-
-i_x, i_y, pred_i_y = i_x[0,t0:tf], i_y[0,t0:tf], pred_i_y[0,t0:tf]
-t_x, t_y, pred_t_y = t_x[0,t0:tf], t_y[0,t0:tf], pred_t_y[0,t0:tf]
-
 train_loss = np.average(train_loss[-50:])
 val_loss = np.average(val_loss[-50:])
 
-
 # Plot Results
-fig, (ax1, ax2) = plt.subplots(2, sharey=True)
-ax1.plot(pred_i_y, color='b', linewidth=0.4, linestyle='-', label = 'denoised ecg')
-ax1.plot(i_y, color='k', linewidth=0.4, linestyle='-', label = 'clean ecg')
-ax1.plot(i_x, color='r', linewidth=0.2, linestyle='-', label = 'noisy ecg')
-ax1.set(title='Model Output | after epochs: {} | train_loss: {:.4f}'.format(trained_epochs, train_loss),
-        ylabel='train set')
-ax1.legend(loc = 2)
+plot = str(input("Plot results(y/n)?: "))
+print("Available data lenght: {}".format(np.shape(t_y)))
 
-ax2.plot(pred_t_y, color='b', linewidth=0.4, linestyle='-', label = 'denoised ecg')
-ax2.plot(t_y, color='k', linewidth=0.4, linestyle='-', label = 'clean ecg')
-ax2.plot(t_x, color='r', linewidth=0.2, linestyle='-', label = 'noisy ecg')
-ax2.set(xlabel ='time(s, {} to {})'.format(t0,tf), ylabel='val set')
-ax2.legend(loc = 2)
+while plot == 'y':
+    t0 = int(input("Plotting | Start time?: "))
+    tf = t0 + int(input("Plotting | Duration?: "))
 
-plt.show()
+    i_x, i_y, pred_i_y = i_x[0,t0:tf], i_y[0,t0:tf], pred_i_y[0,t0:tf]
+    t_x, t_y, pred_t_y = t_x[0,t0:tf], t_y[0,t0:tf], pred_t_y[0,t0:tf]
+
+    fig, (ax1, ax2) = plt.subplots(2, sharey=True)
+    ax1.plot(pred_i_y, color='b', linewidth=0.4, linestyle='-', label = 'denoised ecg')
+    ax1.plot(i_y, color='k', linewidth=0.4, linestyle='-', label = 'clean ecg')
+    ax1.plot(i_x, color='r', linewidth=0.2, linestyle='-', label = 'noisy ecg')
+    ax1.set(title='Model Output | after epochs: {} | train_loss: {:.4f}'.format(trained_epochs, train_loss),
+            ylabel='train set')
+    ax1.legend(loc = 2)
+
+    ax2.plot(pred_t_y, color='b', linewidth=0.4, linestyle='-', label = 'denoised ecg')
+    ax2.plot(t_y, color='k', linewidth=0.4, linestyle='-', label = 'clean ecg')
+    ax2.plot(t_x, color='r', linewidth=0.2, linestyle='-', label = 'noisy ecg')
+    ax2.set(xlabel ='time(s, {} to {})'.format(t0,tf), ylabel='val set')
+    ax2.legend(loc = 2)
+
+    plt.show()
+
+    plot = str(input("Plot again(y/n)?: "))
+
 
 loss = plt.figure(figsize = (10,4));
 loss.plot(train_loss, color='k', linewidth=0.4, linestyle='-', label = 'train_set loss');
@@ -165,7 +170,6 @@ loss.xlabel("Epochs")
 loss.ylabel("Loss")
 
 plt.show()
-
 
 
 print("Session Terminated. Parameters not saved")
