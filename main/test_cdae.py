@@ -139,20 +139,20 @@ while plot == 'y':
     t0 = int(input("Plotting | Start time?: "))
     tf = t0 + int(input("Plotting | Duration?: "))
 
-    i_x, i_y, pred_i_y = i_x[0,t0:tf], i_y[0,t0:tf], pred_i_y[0,t0:tf]
-    t_x, t_y, pred_t_y = t_x[0,t0:tf], t_y[0,t0:tf], pred_t_y[0,t0:tf]
+    i_x_1, i_y_1, pred_i_y_1 = i_x[0,t0:tf], i_y[0,t0:tf], pred_i_y[0,t0:tf]
+    t_x_1, t_y_1, pred_t_y_1 = t_x[0,t0:tf], t_y[0,t0:tf], pred_t_y[0,t0:tf]
 
     fig, (ax1, ax2) = plt.subplots(2, sharey=True)
-    ax1.plot(pred_i_y, color='b', linewidth=0.4, linestyle='-', label = 'denoised ecg')
-    ax1.plot(i_y, color='k', linewidth=0.4, linestyle='-', label = 'clean ecg')
-    ax1.plot(i_x, color='r', linewidth=0.2, linestyle='-', label = 'noisy ecg')
+    ax1.plot(pred_i_y_1, color='b', linewidth=0.4, linestyle='-', label = 'denoised ecg')
+    ax1.plot(i_y_1, color='k', linewidth=0.4, linestyle='-', label = 'clean ecg')
+    ax1.plot(i_x_1, color='r', linewidth=0.2, linestyle='-', label = 'noisy ecg')
     ax1.set(title='Model Output | after epochs: {} | train_loss: {:.4f}'.format(trained_epochs, train_loss),
             ylabel='train set')
     ax1.legend(loc = 2)
 
-    ax2.plot(pred_t_y, color='b', linewidth=0.4, linestyle='-', label = 'denoised ecg')
-    ax2.plot(t_y, color='k', linewidth=0.4, linestyle='-', label = 'clean ecg')
-    ax2.plot(t_x, color='r', linewidth=0.2, linestyle='-', label = 'noisy ecg')
+    ax2.plot(pred_t_y_1, color='b', linewidth=0.4, linestyle='-', label = 'denoised ecg')
+    ax2.plot(t_y_1, color='k', linewidth=0.4, linestyle='-', label = 'clean ecg')
+    ax2.plot(t_x_1, color='r', linewidth=0.2, linestyle='-', label = 'noisy ecg')
     ax2.set(xlabel ='time(s, {} to {})'.format(t0,tf), ylabel='val set')
     ax2.legend(loc = 2)
 
