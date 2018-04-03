@@ -81,7 +81,7 @@ trained_lr = model_params['learning_rate']
 if str(input("Was it trained on this machine(y/n)?: ")) != 'y':
     trained_data.default_filepath()
     trained_data.set_ecg_filepath()
-    trained_data.set_emg_filepath()
+    trained_data.set_emg_filepath(filepath = 'H_emgdata')
     trained_data.set_acc_filepath()
 
 clean_ecg = trained_data.pull_all_ecg()

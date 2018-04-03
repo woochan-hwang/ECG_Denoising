@@ -9,7 +9,7 @@ import torch.utils.data as loader
 from chicken_selects import *
 
 import matplotlib
-if str(input("x11-backend?(y/n): ")) == 'y':
+if str(input("x11-backend(y/n)?: ")) == 'y':
     matplotlib.use('GTKAgg')
     print("GTKAgg backend in use")
 import matplotlib.pyplot as plt
@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 if str(input("Continue Training from pretrained model(y/n)?: ")) == 'y':
 
     # Checks file for appropirate model and prints availabe trained parameters
-    if str(input("Load Conv Autoencoder model?(y/n): ")) == 'y':
+    if str(input("Load Conv Autoencoder model(y/n)?: ")) == 'y':
         dir = "{}/Trained_Params/{}".format(os.getcwd(), 'Convolutional Autoencoder')
         if not os.path.exists(dir):
             print("Model does NOT exist. Please check")
