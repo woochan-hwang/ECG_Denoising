@@ -288,7 +288,7 @@ class Processor(EnvSetter):
         k = int(feature_len)
         sample_num = np.shape(npver)[0]
         sig_len = sample_num*k
-        output = np.zeros(4, sample_num*k)
+        output = np.zeros((4, sample_num*k))
         for i in range(1,sample_num):
             output[:, k*i:k*(i+1)] = npver[i]
         return np.array(output)
