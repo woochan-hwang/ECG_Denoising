@@ -78,11 +78,13 @@ trained_lr = model_params['learning_rate']
 
 # Load data in the same setting used for training
 # Call data into numpy array format. Check soure code for additional input specifications
-if str(input("Was it trained on this machine(y/n)?: ")) != 'y':
-    trained_data.default_filepath()
-    trained_data.set_ecg_filepath()
+trained_data.default_filepath()
+trained_data.set_ecg_filepath()
+trained_data.set_emg_filepath()
+trained_data.set_acc_filepath()
+
+if str(input("Test on H_emgdata(y/n)?: ")) == 'y':
     trained_data.set_emg_filepath(filepath = 'H_emgdata')
-    trained_data.set_acc_filepath()
 
 clean_ecg = trained_data.pull_all_ecg()
 noisy_ecg = trained_data.pull_all_emg()
