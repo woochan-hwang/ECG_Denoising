@@ -78,20 +78,28 @@ trained_lr = model_params['learning_rate']
 
 # Load data in the same setting used for training
 # Call data into numpy array format. Check soure code for additional input specifications
+print("Following folders available:{}".format(os.listdir(os.getcwd())))
+emgfile = str(input("Which EMG data will you use?: "))
 trained_data.default_filepath()
 trained_data.set_ecg_filepath()
-trained_data.set_emg_filepath()
+trained_data.set_emg_filepath(filepath = emgfile)
 trained_data.set_acc_filepath()
 
-if str(input("Test on H2_emgdata(y/n)?: ")) == 'y':
-    trained_data.set_emg_filepath(filepath = 'H2_emgdata')
-
-clean_ecg = trained_data.pull_all_ecg()
-noisy_ecg = trained_data.pull_all_emg()
-acc_dat = trained_data.pull_all_acc()
-
-# Acc data modified to fit that of noisy emg
-acc_dat = np.array(list(acc_dat[:, 0:6000].transpose())*int(108*trained_data.opened_emg/trained_data.opened_acc)).transpose()
+if emgfile == 'H2_emgdata':
+    clean_ecg = trained_data.pull_all_ecg(tf = 576000)
+    acc_dat = trained_data.pull_acc("overall_acc")
+    k = 6
+    acc = np.array(list(acc_dat[:, 0:24000].transpose()))
+else:
+    clean_ecg = trained_data.pull_all_ecg()
+    acc_dat = trained_data.pull_acc("upsampled_acc")
+    k = 27
+    acc = np.array(list(acc_dat[:, 0:6000].transpose()))
+noisy_ecg = trained_data.pull_all_emg(tf = 576000)
+print("noisy_ecg shape: {}".format(np.shape(noisy_ecg)))
+# Acc data modified to fit that of noisy emg. Adjust for increasing EMG ratio
+acc_dat = np.array((list(acc) + list(acc*1.4) +list(acc*1.7)+ list(acc*2))*int(k*trained_data.opened_emg/trained_data.opened_acc)).transpose()
+print("acc shape: {}".format(np.shape(acc_dat)))
 
 # Clean generated from gaussian dist, N(0, 0.05)
 clean_acc = np.random.randn(np.shape(acc_dat)[0], np.shape(acc_dat)[1]) *0.05
