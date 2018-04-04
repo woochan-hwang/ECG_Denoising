@@ -83,8 +83,8 @@ trained_data.set_ecg_filepath()
 trained_data.set_emg_filepath()
 trained_data.set_acc_filepath()
 
-if str(input("Test on H_emgdata(y/n)?: ")) == 'y':
-    trained_data.set_emg_filepath(filepath = 'H_emgdata')
+if str(input("Test on H2_emgdata(y/n)?: ")) == 'y':
+    trained_data.set_emg_filepath(filepath = 'H2_emgdata')
 
 clean_ecg = trained_data.pull_all_ecg()
 noisy_ecg = trained_data.pull_all_emg()
