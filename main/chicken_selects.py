@@ -99,12 +99,12 @@ class WFDBData(EnvSetter):
 
     # Save raw ecg signal from the wfdb format. 30 min each. 360Hz. 11bit. 10mV.
     def pull_ecg(self, filename, t0 = 0, tf = int(20 * 360 * 60)):
-        temp_data = self.pull_wfdb(filename, t0 = 0, tf = int(30 * 360 * 60))
+        temp_data = self.pull_wfdb(filename, t0, tf)
         if type(temp_data) == tuple:
             signal = temp_data[0]
         else:
             signal = temp_data.p_signals
-        out_data = np.reshape(signal,(1, len(temp_data)))
+        out_data = np.reshape(signal,(1, tf-t0))
         return out_data
 
     # Output raw ecg signal from all .dat files in file_path.
@@ -170,13 +170,35 @@ class EMGData(EnvSetter):
         return self.accpath
 
     # Pull individual signals
-    def pull_emg(self, filename, tf = 648000):
-        return np.genfromtxt("{}/{}.csv".format(self.get_emg_filepath(), filename), delimiter = ',')[0:tf]
+    def pull_emg(self, filename, t0, tf):
+        return np.genfromtxt("{}/{}.csv".format(self.get_emg_filepath(), filename), delimiter = ',')[t0:tf]
 
-    def pull_acc(self, filename):
-        acc = np.genfromtxt("{}/{}.csv".format(self.get_acc_filepath(), filename), delimiter = ',')
+    def pull_acc(self, filename, t0, tf):
+        acc = np.genfromtxt("{}/{}.csv".format(self.get_acc_filepath(), filename), delimiter = ',')[t0:tf]
         return acc[:,1:4].transpose()
 
+    def pull_all_emg(self, t0 = 0, tf = 10000):
+        file_path = self.get_emg_filepath()
+        motionlist = ['motion1', 'motion2', 'motion3', 'motion4', 'motion5']
+        newlist = []
+        # Open each motion file and all data files within each. Concat all to newlist
+        for motion in motionlist:
+            file_path = file_path + motion
+            items = os.listdir(file_path)
+            items.sort()
+            for name in items:
+                if name.endswith(".csv"):
+                    namelist.append(name)
+                    name = name[:-4]
+                    data = list(self.pull_emg(filename = name, tf = tf))
+                    print("loaded {}".format(name))
+                    newlist.append(data)
+            print('EMGs opened from {}: {}'.format(file_path, namelist))
+            self.opened_emg = int(len(namelist))
+        signal = np.reshape(np.array(newlist), (1, -1))
+        return signal
+
+'''
     # Pull all relevant(.csv) signals in folder
     def pull_all_emg(self, tf = 648000):
         file_path = self.get_emg_filepath()
@@ -195,8 +217,8 @@ class EMGData(EnvSetter):
         self.opened_emg = int(len(namelist))
         signal = np.reshape(np.array(newlist), (1, -1))
         return signal
-
-    def pull_all_acc(self):
+'''
+    def pull_all_acc(self, t0 = 0, tf = 10000):
         file_path = self.get_acc_filepath()
         items = os.listdir(file_path)
         items.sort()
@@ -206,7 +228,7 @@ class EMGData(EnvSetter):
             if name.endswith(".csv"):
                 namelist.append(name)
                 name = name[:-4]
-                data = self.pull_acc(filename = name)
+                data = self.pull_acc(filename = name, t0 = t0, tf = tf)
                 newlist.append(data)
         print('These are the files[ACC] opened from the dir: {}'.format(namelist))
         self.opened_acc = int(len(namelist))

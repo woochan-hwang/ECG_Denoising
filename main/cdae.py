@@ -17,8 +17,9 @@ if str(input("x11-backend?(y/n): ")) == 'y':
     print("GTKAgg backend in use")
 import matplotlib.pyplot as plt
 
+noiselevel = int(input("EMG noise level?: "))
 # Object Data('model type', 'motion', noiselevel, cuda = False)
-data = Data('Convolutional Autoencoder', 'flexion_extension', 1)
+data = Data('Convolutional Autoencoder', 'mixed', noiselevel = noiselevel)
 
 if torch.cuda.is_available() == True:
     data.cuda_on()
@@ -31,12 +32,19 @@ data.set_emg_filepath()
 data.set_acc_filepath()
 
 # Call data into numpy array format. Check soure code for additional input specifications
-clean_ecg = data.pull_all_ecg()
-noisy_ecg = data.pull_all_emg()
-acc_dat = data.pull_all_acc()
+clean_ecg = data.pull_all_ecg(tf = 600000)
+emg_noise = data.pull_all_emg(tf = 10000) # 10,000 data points * 5 motions * 2 trials * 6 subjects
+acc_dat = data.pull_all_acc(tf = 10000) # equiv to emg 
 
-# Acc data modified to fit that of noisy emg
-acc_dat = np.array(list(acc_dat[:, 0:6000].transpose())*int(108*data.opened_emg/data.opened_acc)).transpose()
+# Normalize data to range (-1,1). Then adjust for noiselevel setting.
+emg_noise = (emg_noise/max(abs(emg_noise)))*data.noiselevel
+clean_ecg = clean_ecg/max(abs(clean_ecg))
+acc_dat = acc_dat/max(abs(acc_dat))*(data.noiselevel^(0.5))
+
+# Generate noisy ecg by adding emg noise on top.
+noisy_ecg = clean_ecg + emg_noise
+
+#acc_dat = np.array(list(acc_dat[:, 0:6000].transpose())*int(108*data.opened_emg/data.opened_acc)).transpose()
 # Clean generated from gaussian dist, N(0, 0.05)
 clean_acc = np.random.randn(np.shape(acc_dat)[0], np.shape(acc_dat)[1]) *0.05
 
@@ -50,9 +58,7 @@ label_dat = data.reformat(label_dat, feature_len = 300, data_form = 2)
 print("Input Data shape: {}".format(np.shape(input_dat)))
 print("Label Data shape: {}".format(np.shape(label_dat)))
 
-train_set, val_set = data.data_splitter(input_dat, label_dat, shuffle = True, ratio = 4)
-print(np.shape(train_set))
-print(np.shape(val_set))
+train_set, val_set = data.data_splitter(input_dat, label_dat, shuffle = True, ratio = 2)
 
 print("CUDA: {}".format(data.cuda))
 print("Step 0: Data Import Done")
@@ -69,12 +75,12 @@ BATCH_SIZE = int(input("Batch size?: "))
 train_set = torch.from_numpy(train_set).float()
 val_set = torch.from_numpy(val_set).float()
 
-
 # Autoencoder Model Structure
 class ConvAutoEncoder(nn.Module):
     def __init__(self):
         super(ConvAutoEncoder, self).__init__()
 
+        # Zero padding is almost the same as average padding in this case
         # Input = b, 1, 4, 300
         self.encoder = nn.Sequential(
             nn.Conv2d(1, 8, (4,3), stride=1, padding=(0,1)), # b, 8, 1, 300
