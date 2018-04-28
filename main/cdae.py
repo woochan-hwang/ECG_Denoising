@@ -1,9 +1,6 @@
 # Convolutional denoising autoencoder (2 layers)
 # Written by Woochan H.
 
-# In this model I changed the denoising objective to just reconstruct the ecg
-# without the clean acc as in previous models.
-
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
@@ -21,11 +18,6 @@ noiselevel = int(input("EMG noise level?: "))
 # Object Data('model type', 'motion', noiselevel, cuda = False)
 data = Data('Convolutional Autoencoder', 'mixed', noiselevel = noiselevel)
 
-if torch.cuda.is_available() == True:
-    data.cuda_on()
-else:
-    print("Cuda Not Detected")
-
 # Specify directory if you have changed folder name / dir
 data.set_ecg_filepath()
 data.set_emg_filepath()
@@ -34,19 +26,26 @@ data.set_acc_filepath()
 # Call data into numpy array format. Check soure code for additional input specifications
 clean_ecg = data.pull_all_ecg(tf = 600000)
 emg_noise = data.pull_all_emg(tf = 10000) # 10,000 data points * 5 motions * 2 trials * 6 subjects
-acc_dat = data.pull_all_acc(tf = 10000) # equiv to emg 
+acc_dat = data.pull_all_acc(tf = 10000) # equiv to emg
 
-# Normalize data to range (-1,1). Then adjust for noiselevel setting.
-emg_noise = (emg_noise/max(abs(emg_noise)))*data.noiselevel
+# Remove mean, normalize to range (-1,1), adjust for noiselevel setting.
+clean_ecg -= np.mean(clean_ecg)
 clean_ecg = clean_ecg/max(abs(clean_ecg))
-acc_dat = acc_dat/max(abs(acc_dat))*(data.noiselevel^(0.5))
 
-# Generate noisy ecg by adding emg noise on top.
-noisy_ecg = clean_ecg + emg_noise
+emg_noise -= np.mean(emg_noise)
+emg_noise = (emg_noise/max(abs(emg_noise)))*data.noiselevel
 
+acc_dat -= np.mean(acc_dat)
+acc_dat = (acc_dat/max(abs(acc_dat)))*float(data.noiselevel^(0.5))
+
+clean_acc = np.random.randn(np.shape(acc_dat)[0], np.shape(acc_dat)[1])*0.05 # N(0,0.05)
 #acc_dat = np.array(list(acc_dat[:, 0:6000].transpose())*int(108*data.opened_emg/data.opened_acc)).transpose()
-# Clean generated from gaussian dist, N(0, 0.05)
-clean_acc = np.random.randn(np.shape(acc_dat)[0], np.shape(acc_dat)[1]) *0.05
+
+# Generate noisy ECG by adding EMG noise
+if len(clean_ecg) == len(emg_noise):
+    noisy_ecg = clean_ecg + emg_noise
+else:
+    print("Mismatch: Clean ECG {} | EMG {}".format(len(clean_ecg), len(emg_noise)))
 
 # Add ACC data onto clean/noisy ecg data
 input_dat = np.vstack((noisy_ecg, acc_dat))
@@ -60,7 +59,6 @@ print("Label Data shape: {}".format(np.shape(label_dat)))
 
 train_set, val_set = data.data_splitter(input_dat, label_dat, shuffle = True, ratio = 2)
 
-print("CUDA: {}".format(data.cuda))
 print("Step 0: Data Import Done")
 
 if str(input("Continue(y/n)?: ")) == 'n':
@@ -70,6 +68,8 @@ if str(input("Continue(y/n)?: ")) == 'n':
 EPOCH = int(input("Epochs?: "))
 LR = float(input("Learning rate?: "))
 BATCH_SIZE = int(input("Batch size?: "))
+
+cuda = True if torch.cuda.is_available() else False
 
 # Generate tensors for training / validation
 train_set = torch.from_numpy(train_set).float()
@@ -105,14 +105,16 @@ class ConvAutoEncoder(nn.Module):
 
 print("Step 1: Model Setup Done")
 
-# Setting of Loss function and optimizer
+# Initialize network
 CAE = ConvAutoEncoder()
-if torch.cuda.is_available() == True:
-    CAE = CAE.cuda()
-optimizer = torch.optim.Adam(CAE.parameters(), lr=LR, weight_decay=1e-5)
-loss_func = nn.MSELoss()
+loss_func = nn.L1Loss()
 train_loss, val_loss = [], []
+if cuda:
+    CAE.cuda()
+    loss_func.cuda()
 
+# Set optimizer
+optimizer = torch.optim.Adam(CAE.parameters(), lr=LR, weight_decay=1e-5)
 
 def save_model(save_name, optim, loss_f, lr, epoch = EPOCH):
     dir = '{}/Trained_Params/{}/{}_{}'.format(data.filepath, data.model, save_name, epoch)
@@ -137,26 +139,19 @@ def save_model(save_name, optim, loss_f, lr, epoch = EPOCH):
 try:
     # Generates mini_batchs for training. Loads data for validation.
     train_loader = loader.DataLoader(dataset = train_set, batch_size = BATCH_SIZE, shuffle = True)
-    t_x, t_y = Variable(val_set[:,0:1,:,:]), Variable(val_set[:,1:2,:,:])
-    print("t_x", t_x.size())
+    v_x, v_y = Variable(val_set[:,0:1,:,:]), Variable(val_set[:,1:2,:,:])
 
     # Moves data and model to gpu if available
-    if torch.cuda.is_available() == True:
-        CAE.cuda()
-        t_x = t_x.cuda()
-        t_y = t_y.cuda()
+    if cuda:
+        v_x, v_y = v_x.cuda(), v_y.cuda()
 
     print("Step 2: Model Training Start")
 
     for epoch in range(EPOCH):
         for step, train_data in enumerate(train_loader):
 
-            if torch.cuda.is_available() == True:
-                b_x = Variable(train_data[:,0:1,:,:]).cuda()
-                b_y = Variable(train_data[:,1:2,:,:]).cuda()
-            else:
-                b_x = Variable(train_data[:,0:1,:,:])
-                b_y = Variable(train_data[:,1:2,:,:])
+            b_x = Variable(train_data[:,0:1,:,:]).cuda() if cuda else Variable(train_data[:,0:1,:,:])
+            b_y = Variable(train_data[:,1:2,:,:]).cuda() if cuda else Variable(train_data[:,1:2,:,:])
 
             de = CAE(b_x)
             loss = loss_func(de, b_y)
@@ -165,8 +160,8 @@ try:
             optimizer.step()
 
         # Evaluates current model state on val data set
-        pred_y = CAE(t_x)
-        loss_val_set = loss_func(pred_y, t_y)
+        pred = CAE(v_x)
+        loss_val_set = loss_func(pred, v_y)
         print('Epoch: {} | train loss: {:.4f} | val loss: {:.4f}'.format(epoch+1, loss.data[0], loss_val_set.data[0]))
         train_loss.append(loss.data[0])
         val_loss.append(loss_val_set.data[0])
@@ -178,14 +173,14 @@ except KeyboardInterrupt:
 
     if str(input("Save Parameters?(y/n): ")) == 'y':
         save_name = str(input("Save parameters as?: ")) + '_Interrupted'
-        save_model(save_name, 'Adam', 'MSELoss', LR)
+        save_model(save_name, 'Adam', 'L1Loss', LR)
     else:
         print("Session Terminated. Parameters not saved")
 
 else:
     if str(input("Save Parameters?(y/n): ")) == 'y':
         save_name = str(input("Save parameters as?: "))
-        save_model(save_name, 'Adam', 'MSELoss', LR)
+        save_model(save_name, 'Adam', 'L1Loss', LR)
     else:
         print("Parameters not saved")
 

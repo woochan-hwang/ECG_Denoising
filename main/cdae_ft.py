@@ -128,7 +128,9 @@ EPOCH = int(input("Epochs?: "))
 LR = float(input("Learning rate?: "))
 BATCH_SIZE = int(input("Batch size?: "))
 
-if torch.cuda.is_available() == True:
+cuda = True if torch.cuda.is_available() else False
+
+if cuda:
     CAE = CAE.cuda()
 optimizer = torch.optim.Adam(CAE.parameters(), lr=LR, weight_decay=1e-5)
 loss_func = nn.MSELoss()
@@ -157,25 +159,19 @@ def save_model(save_name, optim, loss_f, lr, epoch = EPOCH):
 try:
     # Generates mini_batchs for training. Loads data for validation.
     train_loader = loader.DataLoader(dataset = train_set, batch_size = BATCH_SIZE, shuffle = True)
-    t_x, t_y = Variable(val_set[:,0:1,:,:]), Variable(val_set[:,1:2,:,:])
-    print("t_x", t_x.size())
+    v_x, v_y = Variable(val_set[:,0:1,:,:]), Variable(val_set[:,1:2,:,:])
 
     # Moves data and model to gpu if available
-    if torch.cuda.is_available() == True:
-        t_x = t_x.cuda()
-        t_y = t_y.cuda()
+    if cuda:
+        v_x, v_y = v_x.cuda(), v_y.cuda()
 
     print("Step 2: Model Training Start")
 
     for epoch in range(EPOCH):
         for step, train_data in enumerate(train_loader):
 
-            if torch.cuda.is_available() == True:
-                b_x = Variable(train_data[:,0:1,:,:]).cuda()
-                b_y = Variable(train_data[:,1:2,:,:]).cuda()
-            else:
-                b_x = Variable(train_data[:,0:1,:,:])
-                b_y = Variable(train_data[:,1:2,:,:])
+            b_x = Variable(train_data[:,0:1,:,:]).cuda() if cuda else Variable(train_data[:,0:1,:,:])
+            b_y = Variable(train_data[:,1:2,:,:]).cuda() if cuda else Variable(train_data[:,1:2,:,:])
 
             de = CAE(b_x)
             loss = loss_func(de, b_y)
@@ -184,9 +180,9 @@ try:
             optimizer.step()
 
         # Evaluates current model state on val data set
-        pred_y = CAE(t_x)
-        loss_val_set = loss_func(pred_y, t_y)
-        print('Epoch: {} | train loss: {:.6f} | val loss: {:.6f}'.format(epoch+1, loss.data[0], loss_val_set.data[0]))
+        pred = CAE(v_x)
+        loss_val_set = loss_func(pred, v_y)
+        print('Epoch: {} | train loss: {:.4f} | val loss: {:.4f}'.format(epoch+1, loss.data[0], loss_val_set.data[0]))
         train_loss.append(loss.data[0])
         val_loss.append(loss_val_set.data[0])
 
