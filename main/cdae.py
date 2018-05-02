@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 print(torch.__version__)
 
 #noiselevel = int(input("EMG noise level?: "))
-noiselevel = 1
+noiselevel = 0.5
 # Object Data('model type', 'motion', noiselevel, cuda = False)
 data = Data('Convolutional Autoencoder', 'mixed', noiselevel = noiselevel)
 
@@ -27,8 +27,8 @@ data.set_emg_filepath(filepath = 'emgdata_final')
 data.set_acc_filepath(filepath = 'accdata_final')
 
 # Call data into numpy array format. Check soure code for additional input specifications
-clean_ecg = data.pull_all_ecg(tf = 240000) # Total of 14 recordings
-emg_noise = data.pull_all_emg(tf = 10000) # 10,000 data points * 4 motions * 2 trials * 3 subjects
+clean_ecg = data.pull_all_ecg(tf = 320000) # Total of 14 recordings
+emg_noise = data.pull_all_emg(tf = 10000) # 10,000 data points * 4 motions * 2 trials * 4 subjects
 acc_dat = data.pull_all_acc(tf = 10000) # equiv to emg
 
 # Remove mean, normalize to range (-1,1), adjust for noiselevel setting.
@@ -51,7 +51,7 @@ clean_acc = np.random.randn(np.shape(acc_dat)[0], np.shape(acc_dat)[1])*0.05 # N
 # Generate noisy ECG by adding EMG noise
 noisy_ecg = clean_ecg + emg_noise
 
-'''
+
 print("start plot")
 fig, (ax1, ax2) = plt.subplots(2, sharey=True)
 ax1.plot(noisy_ecg[0,100:1000], color='k', linewidth=0.4, linestyle='-', label = 'train_set loss');
@@ -63,7 +63,8 @@ ax2.legend(loc = 2);
 ax2.set(xlabel = "Time", ylabel = "Val Loss")
 
 plt.show()
-'''
+
+quit()
 # Add ACC data onto clean/noisy ecg data
 input_dat = np.vstack((noisy_ecg, acc_dat))
 label_dat = np.vstack((clean_ecg, clean_acc))
@@ -85,7 +86,7 @@ print("Step 0: Data Import Done")
 #EPOCH = int(input("Epochs?: "))
 #LR = float(input("Learning rate?: "))
 #BATCH_SIZE = int(input("Batch size?: "))
-EPOCH = 500
+EPOCH = 10
 LR = 0.0003
 BATCH_SIZE = 128
 
@@ -200,6 +201,7 @@ except KeyboardInterrupt:
 
 else:
     save_model('newdata1', 'Adam', 'L1Loss', LR)
+    print(os.listdir(os.getcwd()))
 
     '''
     if str(input("Save Parameters?(y/n): ")) == 'y':
