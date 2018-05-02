@@ -85,7 +85,7 @@ print("Step 0: Data Import Done")
 #EPOCH = int(input("Epochs?: "))
 #LR = float(input("Learning rate?: "))
 #BATCH_SIZE = int(input("Batch size?: "))
-EPOCH = 10
+EPOCH = 5000
 LR = 0.0003
 BATCH_SIZE = 128
 
