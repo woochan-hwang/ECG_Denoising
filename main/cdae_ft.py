@@ -58,6 +58,7 @@ if cuda:
 EPOCH = 2000
 LR = 0.0003
 BATCH_SIZE = 128
+noiselevel = 3
 
 # Set optimizer
 optimizer = torch.optim.Adam(CAE.parameters(), lr=LR, weight_decay=1e-5)
@@ -77,8 +78,6 @@ trained_data.set_acc_filepath(filepath = 'accdata_final')
 clean_ecg = trained_data.pull_all_ecg(tf = 240000) # Total of 14 recordings
 emg_noise = trained_data.pull_all_emg(tf = 10000) # 10,000 data points * 3 motions * 2 trials * 4 subjects
 acc_dat = trained_data.pull_all_acc(tf = 10000) # equiv to emg
-
-noiselevel = 3
 
 # Remove mean, normalize to range (-1,1), adjust for noiselevel setting.
 clean_ecg[0,:] -= np.mean(clean_ecg[0,:])
