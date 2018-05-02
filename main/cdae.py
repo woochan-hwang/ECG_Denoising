@@ -75,6 +75,7 @@ LR = 0.003
 BATCH_SIZE = 128
 
 cuda = True if torch.cuda.is_available() else False
+print(cuda)
 
 # Generate tensors for training / validation
 train_set = torch.from_numpy(train_set).float()
