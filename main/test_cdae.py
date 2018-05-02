@@ -7,11 +7,6 @@ import torch.nn as nn
 from torch.autograd import Variable
 import numpy as np
 from chicken_selects import *
-
-import matplotlib
-if str(input("x11-backend?(y/n): ")) == 'y':
-    matplotlib.use('GTKAgg')
-    print("GTKAgg backend in use")
 import matplotlib.pyplot as plt
 
 
@@ -83,13 +78,40 @@ trained_lr = model_params['learning_rate']
 
 # Load data in the same setting used for training
 # Call data into numpy array format. Check soure code for additional input specifications
-print("Following folders available:{}".format(os.listdir(os.getcwd())))
-emgfile = str(input("Which EMG data will you use?: "))
 trained_data.default_filepath()
 trained_data.set_ecg_filepath()
-trained_data.set_emg_filepath(filepath = emgfile)
-trained_data.set_acc_filepath()
+trained_data.set_emg_filepath(filepath = 'emgdata_final')
+trained_data.set_acc_filepath(filepath = 'accdata_final')
 
+# Call data into numpy array format. Check soure code for additional input specifications
+clean_ecg = trained_data.pull_all_ecg(tf = 240000) # Total of 14 recordings
+emg_noise = trained_data.pull_all_emg(tf = 10000) # 10,000 data points * 3 motions * 2 trials * 4 subjects
+acc_dat = trained_data.pull_all_acc(tf = 10000) # equiv to emg
+
+noiselevel = int(input("EMG noise level?: "))
+
+# Remove mean, normalize to range (-1,1), adjust for noiselevel setting.
+clean_ecg[0,:] -= np.mean(clean_ecg[0,:])
+clean_ecg[0,:] = clean_ecg[0,:]/max(abs(clean_ecg[0,:]))
+
+emg_noise[0,:] -= np.mean(emg_noise[0,:])
+emg_noise[0,:] = (emg_noise[0,:]/max(abs(emg_noise[0,:])))*noiselevel
+
+for i in range(0,3):
+    acc_dat[i,:] -= np.mean(acc_dat[i,:])
+    acc_dat[i,:] = (acc_dat[i,:]/max(abs(acc_dat[i,:])))*float(noiselevel**(0.5))
+# Repeat the emg noise to each ecg recording
+repeats = np.shape(clean_ecg)[1]/np.shape(emg_noise)[1]
+emg_noise = np.array(list(emg_noise.transpose())*int(repeats)).transpose()
+acc_dat = np.array(list(acc_dat.transpose())*int(repeats)).transpose()
+
+clean_acc = np.random.randn(np.shape(acc_dat)[0], np.shape(acc_dat)[1])*0.05 # N(0,0.05)
+
+# Generate noisy ECG by adding EMG noise
+noisy_ecg = clean_ecg + emg_noise
+
+
+'''
 if emgfile == 'H2_emgdata':
     clean_ecg = trained_data.pull_all_ecg(tf = 576000)
     acc_dat = trained_data.pull_acc("overall_acc")
@@ -108,7 +130,7 @@ print("acc shape: {}".format(np.shape(acc_dat)))
 
 # Clean generated from gaussian dist, N(0, 0.05)
 clean_acc = np.random.randn(np.shape(acc_dat)[0], np.shape(acc_dat)[1]) *0.05
-
+'''
 # Add ACC data onto clean/noisy ecg data
 input_dat = np.vstack((noisy_ecg, acc_dat))
 label_dat = np.vstack((clean_ecg, clean_acc))
@@ -143,8 +165,8 @@ t_x = trained_data.undo_reformat(t_x.data.numpy())
 i_y = trained_data.undo_reformat(i_y)
 t_y = trained_data.undo_reformat(t_y)
 
-train_loss = np.average(train_loss[-50:])
-val_loss = np.average(val_loss[-50:])
+avg_train_loss = np.average(train_loss[-50:])
+avg_val_loss = np.average(val_loss[-50:])
 
 # Plot Results
 plot = str(input("Plot results(y/n)?: "))
@@ -161,7 +183,7 @@ while plot == 'y':
     ax1.plot(pred_i_y_1, color='b', linewidth=0.4, linestyle='-', label = 'denoised ecg')
     ax1.plot(i_y_1, color='k', linewidth=0.4, linestyle='-', label = 'clean ecg')
     ax1.plot(i_x_1, color='r', linewidth=0.2, linestyle='-', label = 'noisy ecg')
-    ax1.set(title='Model Output | after epochs: {} | train_loss: {:.4f}'.format(trained_epochs, train_loss),
+    ax1.set(title='Model Output | after epochs: {} | train_loss: {:.4f}'.format(trained_epochs, avg_val_loss),
             ylabel='train set')
     ax1.legend(loc = 2)
 
@@ -175,9 +197,9 @@ while plot == 'y':
 
     plot = str(input("Plot again(y/n)?: "))
 
-
+print("Plotting Training Loss")
 fig, (ax1, ax2) = plt.subplots(2, sharey=True)
-ax1.plot(train_loss*100, color='k', linewidth=0.4, linestyle='-', label = 'train_set loss');
+ax1.plot(train_loss, color='k', linewidth=0.4, linestyle='-', label = 'train_set loss');
 ax1.legend(loc = 2);
 ax1.set(title = "({} | {} | LR:{})".format(trained_data.model, trained_data.motion, trained_lr),
        ylabel = 'Train Loss');
@@ -189,4 +211,4 @@ ax2.set(xlabel = "Epochs", ylabel = "Val Loss")
 plt.show()
 
 
-print("Session Terminated. Parameters not saved")
+print("Session Terminated")

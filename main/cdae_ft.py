@@ -7,36 +7,12 @@ from torch.autograd import Variable
 import numpy as np
 import torch.utils.data as loader
 from chicken_selects import *
-
-import matplotlib
-if str(input("x11-backend(y/n)?: ")) == 'y':
-    matplotlib.use('GTKAgg')
-    print("GTKAgg backend in use")
 import matplotlib.pyplot as plt
 
-if str(input("Continue Training from pretrained model(y/n)?: ")) == 'y':
-
-    # Checks file for appropirate model and prints availabe trained parameters
-    if str(input("Load Conv Autoencoder model(y/n)?: ")) == 'y':
-        dir = "{}/Trained_Params/{}".format(os.getcwd(), 'Convolutional Autoencoder')
-        if not os.path.exists(dir):
-            print("Model does NOT exist. Please check")
-            quit()
-    items = os.listdir(dir)
-    print("Following Trained parameters available:{}".format(items))
-
-    # Sets parameter directory
-    save_name = str(input("Which would you like to load?: "))
-    params_dir = '{}/{}/model.pth'.format(dir, save_name)
-
-    # Enforce correct directory selection
-    while os.path.exists(params_dir) == False:
-        print("Following Trained parameters available:{}".format(items))
-        save_name = str(input("[Try Again] Which would you like to load?: "))
-        params_dir = '{}/{}/model.pth'.format(dir, save_name)
-
-if str(input("Continue(y/n)?: ")) == 'n':
-    quit()
+params_dir = '{}/Trained_Params/Convolutional Autoencoder/newdata1_5000/model.pth'.format(os.getcwd())
+print(params_dir)
+cuda = True if torch.cuda.is_available() else False
+print("CUDA: ", cuda)
 
 
 # Autoencoder Model Structure
@@ -66,11 +42,25 @@ class ConvAutoEncoder(nn.Module):
         x = self.decoder(x)
         return x
 
-# Loads model and model parameters
+# Load Trained Params
 model_params = torch.load(params_dir)
+
+# Initialize network
 CAE = ConvAutoEncoder()
 CAE.load_state_dict(model_params['state_dict'])
+loss_func = nn.L1Loss()
 train_loss, val_loss = [], []
+if cuda:
+    CAE.cuda()
+    loss_func.cuda()
+
+# Hyper Parameters
+EPOCH = 2000
+LR = 0.0003
+BATCH_SIZE = 128
+
+# Set optimizer
+optimizer = torch.optim.Adam(CAE.parameters(), lr=LR, weight_decay=1e-5)
 
 # Additional information about trained instance
 trained_data = model_params['data_setting']
@@ -78,31 +68,37 @@ print("Step 1: Model Setup Done")
 
 # Load data in the same setting apart from using harder EMG samples
 # Call data into numpy array format. Check soure code for additional input specifications
-print("Following folders available:{}".format(os.listdir(os.getcwd())))
-emgfile = str(input("Which EMG data will you use?: "))
 trained_data.default_filepath()
 trained_data.set_ecg_filepath()
-trained_data.set_emg_filepath(filepath = emgfile)
-trained_data.set_acc_filepath()
+trained_data.set_emg_filepath(filepath = 'emgdata_final')
+trained_data.set_acc_filepath(filepath = 'accdata_final')
 
-if emgfile == 'H2_emgdata':
-    clean_ecg = trained_data.pull_all_ecg(tf = 576000)
-    acc_dat = trained_data.pull_acc("overall_acc")
-    k = 6
-    acc = np.array(list(acc_dat[:, 0:24000].transpose()))
-else:
-    clean_ecg = trained_data.pull_all_ecg()
-    acc_dat = trained_data.pull_acc("upsampled_acc")
-    k = 27
-    acc = np.array(list(acc_dat[:, 0:6000].transpose()))
-noisy_ecg = trained_data.pull_all_emg(tf = 576000)
-print("noisy_ecg shape: {}".format(np.shape(noisy_ecg)))
-# Acc data modified to fit that of noisy emg. Adjust for increasing EMG ratio
-acc_dat = np.array((list(acc) + list(acc*1.4) +list(acc*1.7)+ list(acc*2))*int(k*trained_data.opened_emg/trained_data.opened_acc)).transpose()
-print("acc shape: {}".format(np.shape(acc_dat)))
+# Call data into numpy array format. Check soure code for additional input specifications
+clean_ecg = trained_data.pull_all_ecg(tf = 240000) # Total of 14 recordings
+emg_noise = trained_data.pull_all_emg(tf = 10000) # 10,000 data points * 3 motions * 2 trials * 4 subjects
+acc_dat = trained_data.pull_all_acc(tf = 10000) # equiv to emg
 
-# Clean generated from gaussian dist, N(0, 0.05)
-clean_acc = np.random.randn(np.shape(acc_dat)[0], np.shape(acc_dat)[1]) *0.05
+noiselevel = 3
+
+# Remove mean, normalize to range (-1,1), adjust for noiselevel setting.
+clean_ecg[0,:] -= np.mean(clean_ecg[0,:])
+clean_ecg[0,:] = clean_ecg[0,:]/max(abs(clean_ecg[0,:]))
+
+emg_noise[0,:] -= np.mean(emg_noise[0,:])
+emg_noise[0,:] = (emg_noise[0,:]/max(abs(emg_noise[0,:])))*noiselevel
+
+for i in range(0,3):
+    acc_dat[i,:] -= np.mean(acc_dat[i,:])
+    acc_dat[i,:] = (acc_dat[i,:]/max(abs(acc_dat[i,:])))*float(noiselevel**(0.5))
+# Repeat the emg noise to each ecg recording
+repeats = np.shape(clean_ecg)[1]/np.shape(emg_noise)[1]
+emg_noise = np.array(list(emg_noise.transpose())*int(repeats)).transpose()
+acc_dat = np.array(list(acc_dat.transpose())*int(repeats)).transpose()
+
+clean_acc = np.random.randn(np.shape(acc_dat)[0], np.shape(acc_dat)[1])*0.05 # N(0,0.05)
+
+# Generate noisy ECG by adding EMG noise
+noisy_ecg = clean_ecg + emg_noise
 
 # Add ACC data onto clean/noisy ecg data
 input_dat = np.vstack((noisy_ecg, acc_dat))
@@ -118,23 +114,6 @@ train_set, val_set = trained_data.data_splitter(input_dat, label_dat, shuffle = 
 train_set = torch.from_numpy(train_set).float()
 val_set = torch.from_numpy(val_set).float()
 print("Step 2: Data Import Done")
-
-if str(input("Continue(y/n)?: ")) == 'n':
-    quit()
-
-
-# Hyper Parameters
-EPOCH = int(input("Epochs?: "))
-LR = float(input("Learning rate?: "))
-BATCH_SIZE = int(input("Batch size?: "))
-
-cuda = True if torch.cuda.is_available() else False
-
-if cuda:
-    CAE = CAE.cuda()
-optimizer = torch.optim.Adam(CAE.parameters(), lr=LR, weight_decay=1e-5)
-loss_func = nn.MSELoss()
-
 
 # Save model function
 def save_model(save_name, optim, loss_f, lr, epoch = EPOCH):
@@ -198,26 +177,7 @@ except KeyboardInterrupt:
         print("Session Terminated. Parameters not saved")
 
 else:
-    if str(input("Save Parameters?(y/n): ")) == 'y':
-        save_name = str(input("Save parameters as?: "))
-        save_model(save_name, 'Adam', 'MSELoss', LR)
-    else:
-        print("Parameters not saved")
-
-    # Plot Loss
-    threshold_train = 500*min(train_loss)
-    threshold_val = 500*min(val_loss)
-    for i in range(len(train_loss)):
-        if train_loss[i] > threshold_train:
-            train_loss[i] = threshold_train
-        if val_loss[i] > threshold_val:
-            val_loss[i] = threshold_val
-    plt.figure(figsize = (10,4));
-    plt.plot(train_loss, color='k', linewidth=0.4, linestyle='-', label = 'train_set loss');
-    plt.plot(val_loss, color='b', linewidth=0.4, linestyle='-', label = 'val_set loss')
-    plt.legend(loc = 2);
-    plt.title("FineTune: Training Loss({} | {} | LR:{})".format(trained_data.model, trained_data.motion, LR));
-    plt.xlabel("Epochs")
-    plt.ylabel("Loss")
-
-    plt.show()
+    print("entering else statement")
+    save_model('newdata1_ft_nl3', 'Adam', 'L1Loss', LR)
+    print(os.listdir(os.getcwd()))
+    print(os.getcwd())
