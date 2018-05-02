@@ -109,7 +109,7 @@ class ConvAutoEncoder(nn.Module):
             nn.MaxPool2d((1,2), stride=2), # b, 8, 1, 150
             nn.Conv2d(8, 8, 3, stride=1, padding=1), # b, 8, 1, 150
             nn.Tanh(),
-            nn.MaxPool2d((1,2), stride=2) # b, 8, 1, 75
+            nn.MaxPool2d((1,2), stride=2), # b, 8, 1, 75
             nn.Conv2d(8, 4, 3, stride=1, padding=1), # b, 4, 1, 150
             nn.Tanh(),
         )
