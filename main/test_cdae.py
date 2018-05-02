@@ -65,6 +65,11 @@ class ConvAutoEncoder(nn.Module):
 model_params = torch.load(params_dir)
 train_loss = np.load('{}/{}/trainloss.npy'.format(dir,save_name))
 val_loss = np.load('{}/{}/valloss.npy'.format(dir,save_name))
+print(val_loss)
+print(np.shape(val_loss))
+val_loss = np.reshape(val_loss, (np.shape(val_loss)[0], 1))
+print(np.shape(val_loss))
+
 mymodel = ConvAutoEncoder()
 mymodel.load_state_dict(model_params['state_dict'])
 print("Step 0: Model Structure and Parameter Loaded")
@@ -171,15 +176,15 @@ while plot == 'y':
     plot = str(input("Plot again(y/n)?: "))
 
 
-fig, (t1, t2) = plt.subplots(2, sharey=True)
-t1.plot(train_loss, color='k', linewidth=0.4, linestyle='-', label = 'train_set loss');
-t1.legend(loc = 2);
-t1.set(title = "({} | {} | LR:{})".format(trained_data.model, trained_data.motion, trained_lr),
+fig, (ax1, ax2) = plt.subplots(2, sharey=True)
+ax1.plot(train_loss*100, color='k', linewidth=0.4, linestyle='-', label = 'train_set loss');
+ax1.legend(loc = 2);
+ax1.set(title = "({} | {} | LR:{})".format(trained_data.model, trained_data.motion, trained_lr),
        ylabel = 'Train Loss');
 
-t2.plot(val_loss, color='b', linewidth=0.4, linestyle='-', label = 'val_set loss')
-t2.legend(loc = 2);
-t2.set(xlabel = "Epochs", ylabel = "Val Loss")
+ax2.plot(val_loss, color='b', linewidth=0.4, linestyle='-', label = 'val_set loss')
+ax2.legend(loc = 2);
+ax2.set(xlabel = "Epochs", ylabel = "Val Loss")
 
 plt.show()
 

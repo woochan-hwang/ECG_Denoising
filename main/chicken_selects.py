@@ -154,7 +154,7 @@ class EMGData(EnvSetter):
         self.opened_acc = 0
 
     # Specify filepath for EMG within motherpath
-    def set_emg_filepath(self, filepath = 'emgdata'):
+    def set_emg_filepath(self, filepath = 'emgdata_final'):
         self.emgpath = str(self.get_filepath()) + '/' + str(filepath)
         print('EMGs will be imported from {}'.format(self.emgpath))
 
@@ -162,7 +162,7 @@ class EMGData(EnvSetter):
         return self.emgpath
 
     # Specify filepath for ACC withint motherpath
-    def set_acc_filepath(self, filepath = 'accdata'):
+    def set_acc_filepath(self, filepath = 'accdata_final'):
         self.accpath = str(self.get_filepath()) + '/' + str(filepath)
         print('ACCs will be imported from {}'.format(self.accpath))
 
@@ -174,65 +174,52 @@ class EMGData(EnvSetter):
         return np.genfromtxt("{}/{}.csv".format(self.get_emg_filepath(), filename), delimiter = ',')[t0:tf]
 
     def pull_acc(self, filename, t0, tf):
-        acc = np.genfromtxt("{}/{}.csv".format(self.get_acc_filepath(), filename), delimiter = ',')[t0:tf]
-        return acc[:,1:4].transpose()
+        return np.genfromtxt("{}/{}.csv".format(self.get_acc_filepath(), filename), delimiter = ',')[:,t0:tf]
 
     def pull_all_emg(self, t0 = 0, tf = 10000):
         file_path = self.get_emg_filepath()
-        motionlist = ['motion1', 'motion2', 'motion3', 'motion4', 'motion5']
+        motionlist = ['motion1', 'motion2', 'motion3', 'motion4']
         newlist = []
+        c = 0
         # Open each motion file and all data files within each. Concat all to newlist
         for motion in motionlist:
-            file_path = file_path + motion
-            items = os.listdir(file_path)
+            motion_path = file_path + '/' + motion
+            items = os.listdir(motion_path)
             items.sort()
             for name in items:
                 if name.endswith(".csv"):
-                    namelist.append(name)
                     name = name[:-4]
-                    data = list(self.pull_emg(filename = name, tf = tf))
-                    print("loaded {}".format(name))
+                    data = self.pull_emg(filename = motion + '/' + name, t0 = 0, tf = tf)[:,0]
+                    if len(data) != tf:
+                        print("Not enough data: ", len(data))
                     newlist.append(data)
-            print('EMGs opened from {}: {}'.format(file_path, namelist))
-            self.opened_emg = int(len(namelist))
+                    c += 1
+            print("EMG: Loaded {}".format(motion))
+        self.opened_emg = c
         signal = np.reshape(np.array(newlist), (1, -1))
         return signal
 
-'''
-    # Pull all relevant(.csv) signals in folder
-    def pull_all_emg(self, tf = 648000):
-        file_path = self.get_emg_filepath()
-        items = os.listdir(file_path)
-        items.sort()
-        newlist = []
-        namelist = []
-        for name in items:
-            if name.endswith(".csv"):
-                namelist.append(name)
-                name = name[:-4]
-                data = list(self.pull_emg(filename = name, tf = tf))
-                print("loaded {}".format(name))
-                newlist.append(data)
-        print('These are the files[EMG] opened from the dir: {}'.format(namelist))
-        self.opened_emg = int(len(namelist))
-        signal = np.reshape(np.array(newlist), (1, -1))
-        return signal
-'''
     def pull_all_acc(self, t0 = 0, tf = 10000):
         file_path = self.get_acc_filepath()
-        items = os.listdir(file_path)
-        items.sort()
+        motionlist = ['motion1', 'motion2', 'motion3', 'motion4']
         newlist = []
-        namelist = []
-        for name in items:
-            if name.endswith(".csv"):
-                namelist.append(name)
-                name = name[:-4]
-                data = self.pull_acc(filename = name, t0 = t0, tf = tf)
-                newlist.append(data)
-        print('These are the files[ACC] opened from the dir: {}'.format(namelist))
-        self.opened_acc = int(len(namelist))
-        signal = np.reshape(np.array(newlist), (3, -1))
+        c = 0
+        # Open each motion file and all data files within each. Concat all to newlist
+        for motion in motionlist:
+            motion_path = file_path + '/' + motion
+            items = os.listdir(motion_path)
+            items.sort()
+            for name in items:
+                if name.endswith(".csv"):
+                    name = name[:-4]
+                    data = self.pull_acc(filename = motion + '/' + name, t0 = 0, tf = tf)
+                    if len(data) != tf:
+                        print("Not enough data: ", len(data))
+                    newlist.append(data)
+                    c += 1
+            print("ACC: Loaded {}".format(motion))
+        self.opened_acc = c
+        signal = np.reshape(np.array(newlist), (-1, 3)).transpose()
         return signal
 
 

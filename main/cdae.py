@@ -20,13 +20,14 @@ data = Data('Convolutional Autoencoder', 'mixed', noiselevel = noiselevel)
 
 # Specify directory if you have changed folder name / dir
 data.set_ecg_filepath()
-data.set_emg_filepath()
-data.set_acc_filepath()
+data.set_emg_filepath(filepath = 'emgdata_final')
+data.set_acc_filepath(filepath = 'accdata_final')
 
 # Call data into numpy array format. Check soure code for additional input specifications
-clean_ecg = data.pull_all_ecg(tf = 600000)
-emg_noise = data.pull_all_emg(tf = 10000) # 10,000 data points * 5 motions * 2 trials * 6 subjects
+clean_ecg = data.pull_all_ecg(tf = 240000) # Total of 14 recordings
+emg_noise = data.pull_all_emg(tf = 10000) # 10,000 data points * 4 motions * 2 trials * 3 subjects
 acc_dat = data.pull_all_acc(tf = 10000) # equiv to emg
+print(np.shape(acc_dat))
 
 # Remove mean, normalize to range (-1,1), adjust for noiselevel setting.
 clean_ecg -= np.mean(clean_ecg)
@@ -35,17 +36,21 @@ clean_ecg = clean_ecg/max(abs(clean_ecg))
 emg_noise -= np.mean(emg_noise)
 emg_noise = (emg_noise/max(abs(emg_noise)))*data.noiselevel
 
-acc_dat -= np.mean(acc_dat)
-acc_dat = (acc_dat/max(abs(acc_dat)))*float(data.noiselevel^(0.5))
+for i in range(0,3):
+    acc_dat[i,:] -= np.mean(acc_dat[i,:])
+    acc_dat[i,:] = (acc_dat[i,:]/max(abs(acc_dat[i,:])))*float(data.noiselevel**(0.5))
+print(np.shape(acc_dat))
+# Repeat the emg noise to each ecg recording
+repeats = np.shape(clean_ecg)[1]/np.shape(emg_noise)[1]
+emg_noise = np.array(list(emg_noise.transpose())*int(repeats)).transpose()
+acc_dat = np.array(list(acc_dat.transpose())*int(repeats)).transpose()
 
 clean_acc = np.random.randn(np.shape(acc_dat)[0], np.shape(acc_dat)[1])*0.05 # N(0,0.05)
-#acc_dat = np.array(list(acc_dat[:, 0:6000].transpose())*int(108*data.opened_emg/data.opened_acc)).transpose()
 
 # Generate noisy ECG by adding EMG noise
-if len(clean_ecg) == len(emg_noise):
-    noisy_ecg = clean_ecg + emg_noise
-else:
-    print("Mismatch: Clean ECG {} | EMG {}".format(len(clean_ecg), len(emg_noise)))
+noisy_ecg = clean_ecg + emg_noise
+print(np.shape(noisy_ecg))
+print(np.shape(acc_dat))
 
 # Add ACC data onto clean/noisy ecg data
 input_dat = np.vstack((noisy_ecg, acc_dat))
@@ -57,7 +62,7 @@ label_dat = data.reformat(label_dat, feature_len = 300, data_form = 2)
 print("Input Data shape: {}".format(np.shape(input_dat)))
 print("Label Data shape: {}".format(np.shape(label_dat)))
 
-train_set, val_set = data.data_splitter(input_dat, label_dat, shuffle = True, ratio = 2)
+train_set, val_set = data.data_splitter(input_dat, label_dat, shuffle = True, ratio = 4)
 
 print("Step 0: Data Import Done")
 
