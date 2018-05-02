@@ -73,7 +73,7 @@ print("Step 0: Data Import Done")
 #LR = float(input("Learning rate?: "))
 #BATCH_SIZE = int(input("Batch size?: "))
 EPOCH = 500
-LR = 0.003
+LR = 0.0001
 BATCH_SIZE = 128
 
 cuda = True if torch.cuda.is_available() else False
