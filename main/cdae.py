@@ -183,7 +183,7 @@ except KeyboardInterrupt:
         print("Session Terminated. Parameters not saved")
 
 else:
-    save_model(newdata1, 'Adam', 'L1Loss', LR)
+    save_model('newdata1', 'Adam', 'L1Loss', LR)
 
     '''
     if str(input("Save Parameters?(y/n): ")) == 'y':
