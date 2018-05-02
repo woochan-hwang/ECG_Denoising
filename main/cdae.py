@@ -199,8 +199,10 @@ except KeyboardInterrupt:
         print("Session Terminated. Parameters not saved")
 
 else:
+    print("entering else statement")
     save_model('newdata1', 'Adam', 'L1Loss', LR)
     print(os.listdir(os.getcwd()))
+    print(os.getcwd())
 
     '''
     if str(input("Save Parameters?(y/n): ")) == 'y':
