@@ -27,8 +27,8 @@ data.set_emg_filepath(filepath = 'emgdata_final')
 data.set_acc_filepath(filepath = 'accdata_final')
 
 # Call data into numpy array format. Check soure code for additional input specifications
-clean_ecg = data.pull_all_ecg(tf = 320000) # Total of 14 recordings
-emg_noise = data.pull_all_emg(tf = 10000) # 10,000 data points * 4 motions * 2 trials * 4 subjects
+clean_ecg = data.pull_all_ecg(tf = 240000) # Total of 14 recordings
+emg_noise = data.pull_all_emg(tf = 10000) # 10,000 data points * 3 motions * 2 trials * 4 subjects
 acc_dat = data.pull_all_acc(tf = 10000) # equiv to emg
 
 # Remove mean, normalize to range (-1,1), adjust for noiselevel setting.

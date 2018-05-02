@@ -178,7 +178,7 @@ class EMGData(EnvSetter):
 
     def pull_all_emg(self, t0 = 0, tf = 10000):
         file_path = self.get_emg_filepath()
-        motionlist = ['motion1', 'motion2', 'motion3', 'motion4']
+        motionlist = ['motion1', 'motion3', 'motion4']
         newlist = []
         c = 0
         # Open each motion file and all data files within each. Concat all to newlist
@@ -189,8 +189,7 @@ class EMGData(EnvSetter):
             for name in items:
                 if name.endswith(".csv"):
                     name = name[:-4]
-                    data = self.pull_emg(filename = motion + '/' + name, t0 = 0, tf = tf)[:,1]
-                    data[0] = 0
+                    data = self.pull_emg(filename = motion + '/' + name, t0 = 1, tf = tf + 1)[:,1]
                     if len(data) != tf:
                         print("Not enough data: ", len(data))
                     newlist.append(data)
@@ -202,7 +201,7 @@ class EMGData(EnvSetter):
 
     def pull_all_acc(self, t0 = 0, tf = 10000):
         file_path = self.get_acc_filepath()
-        motionlist = ['motion1', 'motion2', 'motion3', 'motion4']
+        motionlist = ['motion1', 'motion3', 'motion4']
         newlist = []
         c = 0
         # Open each motion file and all data files within each. Concat all to newlist
