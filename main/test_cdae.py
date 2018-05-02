@@ -29,20 +29,36 @@ while os.path.exists(params_dir) == False:
     save_name = str(input("[Try Again] Which would you like to load?: "))
     params_dir = '{}/{}/model.pth'.format(dir, save_name)
 
+cdaever = str(input("CDAE version?(1 or 2): "))
 # Define Model Structure. Should be same as one used for Training
 class ConvAutoEncoder(nn.Module):
     def __init__(self):
         super(ConvAutoEncoder, self).__init__()
 
         # Input = b, 1, 4, 300
-        self.encoder = nn.Sequential(
-            nn.Conv2d(1, 8, (4,3), stride=1, padding=(0,1)), # b, 8, 1, 300
-            nn.Tanh(),
-            nn.MaxPool2d((1,2), stride=2), # b, 8, 1, 150
-            nn.Conv2d(8, 4, 3, stride=1, padding=1), # b, 8, 1, 150
-            nn.Tanh(),
-            nn.MaxPool2d((1,2), stride=2) # b, 4, 1, 75
-        )
+        if  cdaever == '1':
+            self.encoder = nn.Sequential(
+                nn.Conv2d(1, 8, (4,3), stride=1, padding=(0,1)), # b, 8, 1, 300
+                nn.Tanh(),
+                nn.MaxPool2d((1,2), stride=2), # b, 8, 1, 150
+                nn.Conv2d(8, 4, 3, stride=1, padding=1), # b, 8, 1, 150
+                nn.Tanh(),
+                nn.MaxPool2d((1,2), stride=2) # b, 4, 1, 75
+            )
+        elif cdaever == '2':
+            self.encoder = nn.Sequential(
+                nn.Conv2d(1, 8, (4,3), stride=1, padding=(0,1)), # b, 8, 1, 300
+                nn.Tanh(),
+                nn.MaxPool2d((1,2), stride=2), # b, 8, 1, 150
+                nn.Conv2d(8, 8, 3, stride=1, padding=1), # b, 8, 1, 150
+                nn.Tanh(),
+                nn.MaxPool2d((1,2), stride=2), # b, 8, 1, 75
+                nn.Conv2d(8, 4, 3, stride=1, padding=1), # b, 4, 1, 150
+                nn.Tanh(),
+            )
+        else:
+            print("No such version exists")
+
         self.decoder = nn.Sequential(
             nn.ConvTranspose2d(4, 8, 3, stride=2, padding=1, output_padding=(0,1)), # b, 8, 1, 150
             nn.Tanh(),
@@ -60,10 +76,7 @@ class ConvAutoEncoder(nn.Module):
 model_params = torch.load(params_dir)
 train_loss = np.load('{}/{}/trainloss.npy'.format(dir,save_name))
 val_loss = np.load('{}/{}/valloss.npy'.format(dir,save_name))
-print(val_loss)
-print(np.shape(val_loss))
 val_loss = np.reshape(val_loss, (np.shape(val_loss)[0], 1))
-print(np.shape(val_loss))
 
 mymodel = ConvAutoEncoder()
 mymodel.load_state_dict(model_params['state_dict'])
