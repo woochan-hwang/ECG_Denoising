@@ -32,11 +32,11 @@ emg_noise = data.pull_all_emg(tf = 10000) # 10,000 data points * 4 motions * 2 t
 acc_dat = data.pull_all_acc(tf = 10000) # equiv to emg
 
 # Remove mean, normalize to range (-1,1), adjust for noiselevel setting.
-clean_ecg -= np.mean(clean_ecg)
-clean_ecg = clean_ecg/max(abs(clean_ecg))
+clean_ecg[0,:] -= np.mean(clean_ecg[0,:])
+clean_ecg[0,:] = clean_ecg[0,:]/max(abs(clean_ecg[0,:]))
 
-emg_noise -= np.mean(emg_noise)
-emg_noise = (emg_noise/max(abs(emg_noise)))*data.noiselevel
+emg_noise[0,:] -= np.mean(emg_noise[0,:])
+emg_noise[0,:] = (emg_noise[0,:]/max(abs(emg_noise[0,:])))*data.noiselevel
 
 for i in range(0,3):
     acc_dat[i,:] -= np.mean(acc_dat[i,:])
@@ -51,6 +51,19 @@ clean_acc = np.random.randn(np.shape(acc_dat)[0], np.shape(acc_dat)[1])*0.05 # N
 # Generate noisy ECG by adding EMG noise
 noisy_ecg = clean_ecg + emg_noise
 
+'''
+print("start plot")
+fig, (ax1, ax2) = plt.subplots(2, sharey=True)
+ax1.plot(noisy_ecg[0,100:1000], color='k', linewidth=0.4, linestyle='-', label = 'train_set loss');
+ax1.legend(loc = 2);
+ax1.set(title = "Plot", ylabel = 'Train Loss')
+
+ax2.plot(clean_ecg[0,100:1000], color='b', linewidth=0.4, linestyle='-', label = 'val_set loss')
+ax2.legend(loc = 2);
+ax2.set(xlabel = "Time", ylabel = "Val Loss")
+
+plt.show()
+'''
 # Add ACC data onto clean/noisy ecg data
 input_dat = np.vstack((noisy_ecg, acc_dat))
 label_dat = np.vstack((clean_ecg, clean_acc))
@@ -73,7 +86,7 @@ print("Step 0: Data Import Done")
 #LR = float(input("Learning rate?: "))
 #BATCH_SIZE = int(input("Batch size?: "))
 EPOCH = 500
-LR = 0.0001
+LR = 0.0003
 BATCH_SIZE = 128
 
 cuda = True if torch.cuda.is_available() else False

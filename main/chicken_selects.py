@@ -189,7 +189,8 @@ class EMGData(EnvSetter):
             for name in items:
                 if name.endswith(".csv"):
                     name = name[:-4]
-                    data = self.pull_emg(filename = motion + '/' + name, t0 = 0, tf = tf)[:,0]
+                    data = self.pull_emg(filename = motion + '/' + name, t0 = 0, tf = tf)[:,1]
+                    data[0] = 0
                     if len(data) != tf:
                         print("Not enough data: ", len(data))
                     newlist.append(data)
