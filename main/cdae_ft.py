@@ -56,9 +56,9 @@ if cuda:
 
 # Hyper Parameters
 EPOCH = 10000
-LR = 0.0001
+LR = 0.00003
 BATCH_SIZE = 128
-NOISE_LEVEL = 4
+NOISE_LEVEL = 8
 
 # Set optimizer
 optimizer = torch.optim.Adam(CAE.parameters(), lr=LR, weight_decay=1e-5)

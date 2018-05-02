@@ -56,6 +56,24 @@ class ConvAutoEncoder(nn.Module):
                 nn.Conv2d(8, 4, 3, stride=1, padding=1), # b, 4, 1, 150
                 nn.Tanh(),
             )
+        elif cdaever == '3':
+            self.encoder = nn.Sequential(
+                nn.Conv2d(1, 8, (4,7), stride=1, padding=(0,3)), # b, 8, 1, 300
+                nn.Tanh(),
+                nn.MaxPool2d((1,2), stride=2), # b, 8, 1, 150
+                nn.Conv2d(8, 4, 3, stride=1, padding=1), # b, 8, 1, 150
+                nn.Tanh(),
+                nn.MaxPool2d((1,2), stride=2) # b, 4, 1, 75
+            )
+        elif cdaever == '4':
+            self.encoder = nn.Sequential(
+                nn.Conv2d(1, 8, (4,7), stride=1, padding=(0,3)), # b, 8, 1, 300
+                nn.Tanh(),
+                nn.MaxPool2d((1,2), stride=2), # b, 8, 1, 150
+                nn.Conv2d(8, 4, 3, stride=1, padding=1), # b, 8, 1, 150
+                nn.Tanh(),
+                nn.MaxPool2d((1,2), stride=2) # b, 4, 1, 75
+            )
         else:
             print("No such version exists")
 
