@@ -8,13 +8,14 @@ import numpy as np
 import torch.utils.data as loader
 from chicken_selects import *
 
-import matplotlib
-if str(input("x11-backend?(y/n): ")) == 'y':
-    matplotlib.use('GTKAgg')
-    print("GTKAgg backend in use")
+#import matplotlib
+#if str(input("x11-backend?(y/n): ")) == 'y':
+#    matplotlib.use('GTKAgg')
+#    print("GTKAgg backend in use")
 import matplotlib.pyplot as plt
 
-noiselevel = int(input("EMG noise level?: "))
+#noiselevel = int(input("EMG noise level?: "))
+noiselevel = 1
 # Object Data('model type', 'motion', noiselevel, cuda = False)
 data = Data('Convolutional Autoencoder', 'mixed', noiselevel = noiselevel)
 
@@ -27,7 +28,6 @@ data.set_acc_filepath(filepath = 'accdata_final')
 clean_ecg = data.pull_all_ecg(tf = 240000) # Total of 14 recordings
 emg_noise = data.pull_all_emg(tf = 10000) # 10,000 data points * 4 motions * 2 trials * 3 subjects
 acc_dat = data.pull_all_acc(tf = 10000) # equiv to emg
-print(np.shape(acc_dat))
 
 # Remove mean, normalize to range (-1,1), adjust for noiselevel setting.
 clean_ecg -= np.mean(clean_ecg)
@@ -39,7 +39,6 @@ emg_noise = (emg_noise/max(abs(emg_noise)))*data.noiselevel
 for i in range(0,3):
     acc_dat[i,:] -= np.mean(acc_dat[i,:])
     acc_dat[i,:] = (acc_dat[i,:]/max(abs(acc_dat[i,:])))*float(data.noiselevel**(0.5))
-print(np.shape(acc_dat))
 # Repeat the emg noise to each ecg recording
 repeats = np.shape(clean_ecg)[1]/np.shape(emg_noise)[1]
 emg_noise = np.array(list(emg_noise.transpose())*int(repeats)).transpose()
@@ -49,8 +48,6 @@ clean_acc = np.random.randn(np.shape(acc_dat)[0], np.shape(acc_dat)[1])*0.05 # N
 
 # Generate noisy ECG by adding EMG noise
 noisy_ecg = clean_ecg + emg_noise
-print(np.shape(noisy_ecg))
-print(np.shape(acc_dat))
 
 # Add ACC data onto clean/noisy ecg data
 input_dat = np.vstack((noisy_ecg, acc_dat))
@@ -66,13 +63,16 @@ train_set, val_set = data.data_splitter(input_dat, label_dat, shuffle = True, ra
 
 print("Step 0: Data Import Done")
 
-if str(input("Continue(y/n)?: ")) == 'n':
-    quit()
+#if str(input("Continue(y/n)?: ")) == 'n':
+#    quit()
 
 # Hyper Parameters
-EPOCH = int(input("Epochs?: "))
-LR = float(input("Learning rate?: "))
-BATCH_SIZE = int(input("Batch size?: "))
+#EPOCH = int(input("Epochs?: "))
+#LR = float(input("Learning rate?: "))
+#BATCH_SIZE = int(input("Batch size?: "))
+EPOCH = 3000
+LR = 0.003
+BATCH_SIZE = 128
 
 cuda = True if torch.cuda.is_available() else False
 
@@ -183,6 +183,9 @@ except KeyboardInterrupt:
         print("Session Terminated. Parameters not saved")
 
 else:
+    save_model(newdata1, 'Adam', 'L1Loss', LR)
+
+    '''
     if str(input("Save Parameters?(y/n): ")) == 'y':
         save_name = str(input("Save parameters as?: "))
         save_model(save_name, 'Adam', 'L1Loss', LR)
@@ -206,3 +209,4 @@ else:
     plt.ylabel("Loss")
 
     plt.show()
+    '''
