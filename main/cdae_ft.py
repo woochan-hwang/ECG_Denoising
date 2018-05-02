@@ -58,7 +58,7 @@ if cuda:
 EPOCH = 2000
 LR = 0.0003
 BATCH_SIZE = 128
-noiselevel = 3
+NOISE_LEVEL = 3
 
 # Set optimizer
 optimizer = torch.optim.Adam(CAE.parameters(), lr=LR, weight_decay=1e-5)
@@ -84,11 +84,11 @@ clean_ecg[0,:] -= np.mean(clean_ecg[0,:])
 clean_ecg[0,:] = clean_ecg[0,:]/max(abs(clean_ecg[0,:]))
 
 emg_noise[0,:] -= np.mean(emg_noise[0,:])
-emg_noise[0,:] = (emg_noise[0,:]/max(abs(emg_noise[0,:])))*noiselevel
+emg_noise[0,:] = (emg_noise[0,:]/max(abs(emg_noise[0,:])))*NOISE_LEVEL
 
 for i in range(0,3):
     acc_dat[i,:] -= np.mean(acc_dat[i,:])
-    acc_dat[i,:] = (acc_dat[i,:]/max(abs(acc_dat[i,:])))*float(noiselevel**(0.5))
+    acc_dat[i,:] = (acc_dat[i,:]/max(abs(acc_dat[i,:])))*float(NOISE_LEVEL**(0.5))
 # Repeat the emg noise to each ecg recording
 repeats = np.shape(clean_ecg)[1]/np.shape(emg_noise)[1]
 emg_noise = np.array(list(emg_noise.transpose())*int(repeats)).transpose()
@@ -177,6 +177,6 @@ except KeyboardInterrupt:
 
 else:
     print("entering else statement")
-    save_model('newdata1_ft_nl3', 'Adam', 'L1Loss', LR)
+    save_model('newdata1_ft_nl{}'.format(NOISE_LEVEL), 'Adam', 'L1Loss', LR)
     print(os.listdir(os.getcwd()))
     print(os.getcwd())
