@@ -51,19 +51,6 @@ clean_acc = np.random.randn(np.shape(acc_dat)[0], np.shape(acc_dat)[1])*0.05 # N
 # Generate noisy ECG by adding EMG noise
 noisy_ecg = clean_ecg + emg_noise
 
-'''
-print("start plot")
-fig, (ax1, ax2) = plt.subplots(2, sharey=True)
-ax1.plot(noisy_ecg[0,100:1000], color='k', linewidth=0.4, linestyle='-', label = 'train_set loss');
-ax1.legend(loc = 2);
-ax1.set(title = "Plot", ylabel = 'Train Loss')
-
-ax2.plot(clean_ecg[0,100:1000], color='b', linewidth=0.4, linestyle='-', label = 'val_set loss')
-ax2.legend(loc = 2);
-ax2.set(xlabel = "Time", ylabel = "Val Loss")
-
-plt.show()
-'''
 # Add ACC data onto clean/noisy ecg data
 input_dat = np.vstack((noisy_ecg, acc_dat))
 label_dat = np.vstack((clean_ecg, clean_acc))
@@ -85,7 +72,7 @@ print("Step 0: Data Import Done")
 #EPOCH = int(input("Epochs?: "))
 #LR = float(input("Learning rate?: "))
 #BATCH_SIZE = int(input("Batch size?: "))
-EPOCH = 2000
+EPOCH = 5000
 LR = 0.0003
 BATCH_SIZE = 128
 
@@ -139,9 +126,9 @@ class ConvAutoEncoder(nn.Module):
 
     def forward(self, x):
         x1 = self.encoder1(x)
-        x1 = self.decoder1(x)
+        x1 = self.decoder1(x1)
         x2 = self.encoder2(x)
-        x2 = self.encoder2(x)
+        x2 = self.encoder2(x2)
         avg = (x1 + x2)/2
         return avg
 
