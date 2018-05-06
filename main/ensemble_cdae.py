@@ -128,7 +128,7 @@ class ConvAutoEncoder(nn.Module):
         x1 = self.encoder1(x)
         x1 = self.decoder1(x1)
         x2 = self.encoder2(x)
-        x2 = self.encoder2(x2)
+        x2 = self.decoder2(x2)
         avg = (x1 + x2)/2
         return avg
 
