@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 from torch.autograd import Variable
 import numpy as np
-import scipy
+import scipy.ndimage as nd
 import torch.utils.data as loader
 from chicken_selects import *
 import matplotlib.pyplot as plt
@@ -59,6 +59,15 @@ print("Label Data shape: {}".format(np.shape(label_dat)))
 
 train_set, val_set = data.data_splitter(input_dat, label_dat, shuffle = True, ratio = 4)
 
+LoG = nd.filters.gaussian_laplace(label_dat[:,0,:], sigma = (0,5))
+print(LoG)
+print(np.shape(LoG))
+print("mean", np.mean(LoG))
+print("max", max(LoG[3,:]))
+print("min", min(LoG[3,:]))
+print("peak count", abs(LoG[3,:])>0.1 )
+
+_ = input("sdfawef")
 print("Step 0: Data Import Done")
 
 #if str(input("Continue(y/n)?: ")) == 'n':
@@ -104,8 +113,8 @@ class ConvAutoEncoder(nn.Module):
         # Evaluates confidence based on bottleneck features
         self.critic = nn.Sequential(
             nn.Conv2d(4, 1, 3, stride=1, padding=1), # b, 1, 1, 75
-            nn.Tanh(),
             nn.Linear(75,30)
+            nn.Sigmoid() # Compress output to range [0,1]
         )
 
     def forward(self, x):
@@ -124,20 +133,34 @@ if cuda:
 L1Loss = nn.L1Loss()
 
 # Define custom loss function based on morphological ROI
-def customloss(x, y):
+# Alpha = weight for smooth_idx, Beta = weight for peak_idx
+def customloss(x1, x2, y, alpha, beta):
     # Laplacian of Gaussian filter to define ROI
-    LoG = scipy.ndimage.filters.gaussian_laplace(x, sigma = 5)
-    print(LoG)
-    print(LoG.shape())
-    loss = "ROI1"
-    return loss
+    LoG = nd.filters.gaussian_laplace(y[:,:,0,:], sigma = (0,0,5))
+    LoG = LoG > 0.1 # Thresholding
+    smooth_idx = np.where(LoG, 1, alpha) # Weighted index map
+    peak_idx = np.where(LoG, beta, 1)
+    loss1 = L1Loss(x1, y*smooth_idx)
+    loss2 = L1Loss(x2, y*peak_idx)
+    return loss1, loss2
+
+# Loss for confidence of each box of length 10.
+def confidenceloss(x, y, c):
+    L1 = abs(x[:,0,:] - y[:,0,:])
+    compressed = []
+    for i in range(np.shape(L1)[1]):
+        mean_error = np.mean(L1[i*10:(i+1)*10])
+        norm_error =
+        compressed.append()
+    confidence = 1 - np.array(compressed)
+    confidenceloss = abs(c - confidence)
+    return confidence_loss
 
 train_loss1, val_loss1, trainloss2, val_loss2, train_loss3, val_loss3 = [],[],[],[],[],[]
 
 # Set optimizer
 optimizer1 = torch.optim.Adam(CAE1.parameters(), lr=LR, weight_decay=1e-5)
 optimizer2 = torch.optim.Adam(CAE2.parameters(), lr=LR, weight_decay=1e-5)
-
 
 def save_model(save_name, optim, loss_f, lr, epoch = EPOCH):
     dir = '{}/Trained_Params/{}/{}_{}'.format(data.filepath, data.model, save_name, epoch)
@@ -176,29 +199,31 @@ try:
             b_x = Variable(train_data[:,0:1,:,:]).cuda() if cuda else Variable(train_data[:,0:1,:,:])
             b_y = Variable(train_data[:,1:2,:,:]).cuda() if cuda else Variable(train_data[:,1:2,:,:])
 
-            smooth_recon, confidence1 = CAE1(b_x)
+            smooth_recon, cf1 = CAE1(b_x)
+            peak_recon, cf2 = CAE2(b_x)
+
+            loss1, loss2 = customloss(smooth_recon, peak_recon, b_y, 5, 5)
+            cfloss1, cfloss2 = confidenceloss(smooth_recon, b_y, cf1), confidenceloss(peak_recon, b_y, cf2)
+
             optimizer1.zero_grad()
-            loss1 = customloss(smooth_recon, b_y)
-            loss1.backward()
+            (loss1, cfloss1).backward()
             optimizer1.step()
 
-            peak_recon, confidence2 = CAE2(b_x)
             optimizer2.zero_grad()
-            loss2 = customloss(peak_recon, b_y)
-            loss2.backward()
+            (loss2, cfloss2).backward()
             optimizer2.step()
 
         # Evaluates current model state on val data set
-        pred1 = CAE1(v_x)
-        loss_val_set1 = customloss(pred1, v_y)
+        pred1, cf1 = CAE1(v_x)
+        pred2, cf2 = CAE2(v_x)
+        loss_val_set1, loss_val_set2 = customloss(pred1, pred2, v_y, 5, 5)
+
         train_loss1.append(loss1.data[0])
         val_loss1.append(loss_val_set1.data[0])
-        print('Epoch: {} | part 1 | train loss: {:.4f} | val loss: {:.4f}'.format(epoch+1, loss.data[0], loss_val_set.data[0]))
-
-        pred2 = CAE2(v_x)
-        loss_val_set2 = customloss(pred2, v_y)
         train_loss2.append(loss1.data[0])
         val_loss2.append(loss_val_set1.data[0])
+
+        print('Epoch: {} | part 1 | train loss: {:.4f} | val loss: {:.4f}'.format(epoch+1, loss.data[0], loss_val_set.data[0]))
         print('Epoch: {} | part 2 | train loss: {:.4f} | val loss: {:.4f}'.format(epoch+1, loss.data[0], loss_val_set.data[0]))
 
         # Update both submodels based on ensemble loss every 10 epochs
@@ -208,23 +233,15 @@ try:
                 b_x = Variable(train_data[:,0:1,:,:]).cuda() if cuda else Variable(train_data[:,0:1,:,:])
                 b_y = Variable(train_data[:,1:2,:,:]).cuda() if cuda else Variable(train_data[:,1:2,:,:])
 
-                smooth_recon, confidence1 = CAE1(b_x)
-                peak_recon, confidence2 = CAE2(b_x)
-                c_ratio1 = confidence1/(confidence1 + confidence2)
-                c_ratio2 = confidence2/(confidence1 + confidence2)
+                smooth_recon, cf1 = CAE1(b_x)
+                peak_recon, cf2 = CAE2(b_x)
+                c_ratio1 = cf1/(cf1 + cf2)
+                c_ratio2 = cf2/(cf1 + cf2)
                 for i in range(len(confidence1)):
                     final_recon[:,:,:,i*10:(i+1)*10] = (smooth_recon[:,:,:,i*10:(i+1)*10]*c_ratio1[:,:,:,i]
                                                         + peak_recon[:,:,:,i*10:(i+1)*10]*c_ratio2[:,:,:,i])
 
                 ensemble_loss = L1Loss(final_recon, b_y)
-
-                optimizer1.zero_grad()
-                ensemble_loss.backward()
-                optimizer1.step()
-
-                optimizer2.zero_grad()
-                ensemble_loss.backward()
-                optimizer2.step()
 
             pred = (CAE1(v_x) + CAE2(v_x))/2
             ensemble_loss_val_set = L1Loss(pred, v_y)
