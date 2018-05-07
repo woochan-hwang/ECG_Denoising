@@ -5,13 +5,9 @@ import torch
 import torch.nn as nn
 from torch.autograd import Variable
 import numpy as np
+import scipy
 import torch.utils.data as loader
 from chicken_selects import *
-
-#import matplotlib
-#if str(input("x11-backend?(y/n): ")) == 'y':
-#    matplotlib.use('GTKAgg')
-#    print("GTKAgg backend in use")
 import matplotlib.pyplot as plt
 
 print(torch.__version__)
@@ -90,28 +86,14 @@ class ConvAutoEncoder(nn.Module):
 
         # Zero padding is almost the same as average padding in this case
         # Input = b, 1, 4, 300
-
-        # Ensemple Model 1
-        self.encoder1 = nn.Sequential(
+        self.encoder = nn.Sequential(
             nn.Conv2d(1, 8, (4,3), stride=1, padding=(0,1)), # b, 8, 1, 300
             nn.Tanh(),
             nn.MaxPool2d((1,2), stride=2), # b, 8, 1, 150
-            nn.Conv2d(8, 4, 3, stride=1, padding=1), # b, 8, 1, 150
+            nn.Conv2d(8, 4, 3, stride=1, padding=1), # b, 4, 1, 150
             nn.Tanh(),
             nn.MaxPool2d((1,2), stride=2) # b, 4, 1, 75
         )
-        # Emsemble Model 2
-        self.encoder2 = nn.Sequential(
-            nn.Conv2d(1, 8, (4,9), stride=1, padding=(0,4)), # b, 8, 1, 300
-            nn.Tanh(),
-            nn.MaxPool2d((1,2), stride=2), # b, 8, 1, 150
-            nn.Conv2d(8, 4, 3, stride=1, padding=1), # b, 8, 1, 150
-            nn.Tanh(),
-            nn.MaxPool2d((1,2), stride=2) # b, 4, 1, 75
-        )
-        # Concat bottleneck features
-        self.ensemble = nn.Linear(150,75) # b, 4, 1, 150 to b, 4, 1, 75
-        # Decoder
         self.decoder = nn.Sequential(
             nn.ConvTranspose2d(4, 8, 3, stride=2, padding=1, output_padding=(0,1)), # b, 8, 1, 150
             nn.Tanh(),
@@ -119,33 +101,49 @@ class ConvAutoEncoder(nn.Module):
             nn.Tanh(),
             nn.ConvTranspose2d(8, 1, 3, stride=1, padding=1), # b, 1, 4, 300
         )
+        # Evaluates confidence based on bottleneck features
+        self.critic = nn.Sequential(
+            nn.Conv2d(4, 1, 3, stride=1, padding=1), # b, 1, 1, 75
+            nn.Tanh(),
+            nn.Linear(75,30)
+        )
 
     def forward(self, x):
-        x1 = self.encoder1(x)
-        x2 = self.encoder2(x)
-        combined = torch.cat((x1, x2), -1)
-        y = self.ensemble(combined)
-        y = self.decoder(y)
-        return y
+        x = self.encoder(x)
+        y = self.decoder(x)
+        c = self.critic(x)
+        return y, c
 
 print("Step 1: Model Setup Done")
 
 # Initialize network
-CAE = ConvAutoEncoder()
-loss_func = nn.L1Loss()
-train_loss, val_loss = [], []
+CAE1 = ConvAutoEncoder() # Ensemble part 1 : Smoothing reconstruction
+CAE2 = ConvAutoEncoder() # Ensemble part 2 : Peak Reconstruction
 if cuda:
     CAE.cuda()
-    loss_func.cuda()
+L1Loss = nn.L1Loss()
+
+# Define custom loss function based on morphological ROI
+def customloss(x, y):
+    # Laplacian of Gaussian filter to define ROI
+    LoG = scipy.ndimage.filters.gaussian_laplace(x, sigma = 5)
+    print(LoG)
+    print(LoG.shape())
+    loss = "ROI1"
+    return loss
+
+train_loss1, val_loss1, trainloss2, val_loss2, train_loss3, val_loss3 = [],[],[],[],[],[]
 
 # Set optimizer
-optimizer = torch.optim.Adam(CAE.parameters(), lr=LR, weight_decay=1e-5)
+optimizer1 = torch.optim.Adam(CAE1.parameters(), lr=LR, weight_decay=1e-5)
+optimizer2 = torch.optim.Adam(CAE2.parameters(), lr=LR, weight_decay=1e-5)
+
 
 def save_model(save_name, optim, loss_f, lr, epoch = EPOCH):
     dir = '{}/Trained_Params/{}/{}_{}'.format(data.filepath, data.model, save_name, epoch)
     if not os.path.exists(dir):
         os.makedirs(dir)
-    CAE.cpu()
+    CAE1.cpu(), CAE2.cpu()
     data.cuda_off()
     torch.save({'data_setting': data,
                 'state_dict': CAE.state_dict(),
@@ -178,18 +176,61 @@ try:
             b_x = Variable(train_data[:,0:1,:,:]).cuda() if cuda else Variable(train_data[:,0:1,:,:])
             b_y = Variable(train_data[:,1:2,:,:]).cuda() if cuda else Variable(train_data[:,1:2,:,:])
 
-            de = CAE(b_x)
-            loss = loss_func(de, b_y)
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
+            smooth_recon, confidence1 = CAE1(b_x)
+            optimizer1.zero_grad()
+            loss1 = customloss(smooth_recon, b_y)
+            loss1.backward()
+            optimizer1.step()
+
+            peak_recon, confidence2 = CAE2(b_x)
+            optimizer2.zero_grad()
+            loss2 = customloss(peak_recon, b_y)
+            loss2.backward()
+            optimizer2.step()
 
         # Evaluates current model state on val data set
-        pred = CAE(v_x)
-        loss_val_set = loss_func(pred, v_y)
-        print('Epoch: {} | train loss: {:.4f} | val loss: {:.4f}'.format(epoch+1, loss.data[0], loss_val_set.data[0]))
-        train_loss.append(loss.data[0])
-        val_loss.append(loss_val_set.data[0])
+        pred1 = CAE1(v_x)
+        loss_val_set1 = customloss(pred1, v_y)
+        train_loss1.append(loss1.data[0])
+        val_loss1.append(loss_val_set1.data[0])
+        print('Epoch: {} | part 1 | train loss: {:.4f} | val loss: {:.4f}'.format(epoch+1, loss.data[0], loss_val_set.data[0]))
+
+        pred2 = CAE2(v_x)
+        loss_val_set2 = customloss(pred2, v_y)
+        train_loss2.append(loss1.data[0])
+        val_loss2.append(loss_val_set1.data[0])
+        print('Epoch: {} | part 2 | train loss: {:.4f} | val loss: {:.4f}'.format(epoch+1, loss.data[0], loss_val_set.data[0]))
+
+        # Update both submodels based on ensemble loss every 10 epochs
+        if epoch % 10 == 0:
+            for step, train_data in enumerate(train_loader):
+
+                b_x = Variable(train_data[:,0:1,:,:]).cuda() if cuda else Variable(train_data[:,0:1,:,:])
+                b_y = Variable(train_data[:,1:2,:,:]).cuda() if cuda else Variable(train_data[:,1:2,:,:])
+
+                smooth_recon, confidence1 = CAE1(b_x)
+                peak_recon, confidence2 = CAE2(b_x)
+                c_ratio1 = confidence1/(confidence1 + confidence2)
+                c_ratio2 = confidence2/(confidence1 + confidence2)
+                for i in range(len(confidence1)):
+                    final_recon[:,:,:,i*10:(i+1)*10] = (smooth_recon[:,:,:,i*10:(i+1)*10]*c_ratio1[:,:,:,i]
+                                                        + peak_recon[:,:,:,i*10:(i+1)*10]*c_ratio2[:,:,:,i])
+
+                ensemble_loss = L1Loss(final_recon, b_y)
+
+                optimizer1.zero_grad()
+                ensemble_loss.backward()
+                optimizer1.step()
+
+                optimizer2.zero_grad()
+                ensemble_loss.backward()
+                optimizer2.step()
+
+            pred = (CAE1(v_x) + CAE2(v_x))/2
+            ensemble_loss_val_set = L1Loss(pred, v_y)
+            train_loss3.append(ensemble_loss.data[0])
+            val_loss3.append(ensemble_loss_val_set1.data[0])
+            print('Ensemble Loss | train loss: {:.4f} | val loss: {:.4f}'.format(loss.data[0], loss_val_set.data[0]))
 
     print("Step 2: Model Training Finished")
 
@@ -204,6 +245,6 @@ except KeyboardInterrupt:
 
 else:
     print("entering else statement")
-    save_model('Ensemble_cdaev2', 'Adam', 'L1Loss', LR)
+    save_model('Ensemble_cdae', 'Adam', 'L1Loss', LR)
     print(os.listdir(os.getcwd()))
     print(os.getcwd())
