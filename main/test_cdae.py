@@ -29,7 +29,7 @@ while os.path.exists(params_dir) == False:
     save_name = str(input("[Try Again] Which would you like to load?: "))
     params_dir = '{}/{}/model.pth'.format(dir, save_name)
 
-cdaever = str(input("CDAE version?(1 or 2): "))
+cdaever = str(input("CDAE version?(1~4): "))
 # Define Model Structure. Should be same as one used for Training
 class ConvAutoEncoder(nn.Module):
     def __init__(self):
@@ -45,16 +45,29 @@ class ConvAutoEncoder(nn.Module):
                 nn.Tanh(),
                 nn.MaxPool2d((1,2), stride=2) # b, 4, 1, 75
             )
+            self.decoder = nn.Sequential(
+                nn.ConvTranspose2d(4, 8, 3, stride=2, padding=1, output_padding=(0,1)), # b, 8, 1, 150
+                nn.Tanh(),
+                nn.ConvTranspose2d(8, 8, 3, stride=2, padding=(0,1), output_padding=1), # b, 8, 4, 300
+                nn.Tanh(),
+                nn.ConvTranspose2d(8, 1, 3, stride=1, padding=1), # b, 1, 4, 300
+            )
+
         elif cdaever == '2':
             self.encoder = nn.Sequential(
-                nn.Conv2d(1, 8, (4,3), stride=1, padding=(0,1)), # b, 8, 1, 300
+                nn.Conv2d(1, 16, (4,3), stride=1, padding=(0,1)), # b, 16, 1, 300
                 nn.Tanh(),
-                nn.MaxPool2d((1,2), stride=2), # b, 8, 1, 150
-                nn.Conv2d(8, 8, 3, stride=1, padding=1), # b, 8, 1, 150
+                nn.MaxPool2d((1,2), stride=2), # b, 16, 1, 150
+                nn.Conv2d(16, 8, 3, stride=1, padding=1), # b, 8, 1, 150
                 nn.Tanh(),
-                nn.MaxPool2d((1,2), stride=2), # b, 8, 1, 75
-                nn.Conv2d(8, 4, 3, stride=1, padding=1), # b, 4, 1, 150
+                nn.MaxPool2d((1,2), stride=2) # b, 8, 1, 75
+            )
+            self.decoder = nn.Sequential(
+                nn.ConvTranspose2d(8, 8, 3, stride=2, padding=1, output_padding=(0,1)), # b, 8, 1, 150
                 nn.Tanh(),
+                nn.ConvTranspose2d(8, 4, 3, stride=2, padding=(0,1), output_padding=1), # b, 4, 4, 300
+                nn.Tanh(),
+                nn.ConvTranspose2d(4, 1, 3, stride=1, padding=1), # b, 1, 4, 300
             )
         elif cdaever == '3':
             self.encoder = nn.Sequential(
@@ -65,25 +78,33 @@ class ConvAutoEncoder(nn.Module):
                 nn.Tanh(),
                 nn.MaxPool2d((1,2), stride=2) # b, 4, 1, 75
             )
+            self.decoder = nn.Sequential(
+                nn.ConvTranspose2d(4, 8, 3, stride=2, padding=1, output_padding=(0,1)), # b, 8, 1, 150
+                nn.Tanh(),
+                nn.ConvTranspose2d(8, 8, 3, stride=2, padding=(0,1), output_padding=1), # b, 8, 4, 300
+                nn.Tanh(),
+                nn.ConvTranspose2d(8, 1, 3, stride=1, padding=1), # b, 1, 4, 300
+            )
+
         elif cdaever == '4':
             self.encoder = nn.Sequential(
-                nn.Conv2d(1, 8, (4,7), stride=1, padding=(0,3)), # b, 8, 1, 300
+                nn.Conv2d(1, 8, (4,15), stride=1, padding=(0,7)), # b, 8, 1, 300
                 nn.Tanh(),
                 nn.MaxPool2d((1,2), stride=2), # b, 8, 1, 150
                 nn.Conv2d(8, 4, 3, stride=1, padding=1), # b, 8, 1, 150
                 nn.Tanh(),
                 nn.MaxPool2d((1,2), stride=2) # b, 4, 1, 75
             )
+            self.decoder = nn.Sequential(
+                nn.ConvTranspose2d(4, 8, 3, stride=2, padding=1, output_padding=(0,1)), # b, 8, 1, 150
+                nn.Tanh(),
+                nn.ConvTranspose2d(8, 8, 3, stride=2, padding=(0,1), output_padding=1), # b, 8, 4, 300
+                nn.Tanh(),
+                nn.ConvTranspose2d(8, 1, 3, stride=1, padding=1), # b, 1, 4, 300
+            )
+
         else:
             print("No such version exists")
-
-        self.decoder = nn.Sequential(
-            nn.ConvTranspose2d(4, 8, 3, stride=2, padding=1, output_padding=(0,1)), # b, 8, 1, 150
-            nn.Tanh(),
-            nn.ConvTranspose2d(8, 8, 3, stride=2, padding=(0,1), output_padding=1), # b, 8, 4, 300
-            nn.Tanh(),
-            nn.ConvTranspose2d(8, 1, 3, stride=1, padding=1), # b, 1, 4, 300
-        )
 
     def forward(self, x):
         x = self.encoder(x)
