@@ -92,7 +92,6 @@ val_set = torch.from_numpy(val_set).float()
 class ConvAutoEncoder(nn.Module):
     def __init__(self):
         super(ConvAutoEncoder, self).__init__()
-
         # Zero padding is almost the same as average padding in this case
         # Input = b, 1, 4, 300
         self.encoder = nn.Sequential(
@@ -110,18 +109,28 @@ class ConvAutoEncoder(nn.Module):
             nn.Tanh(),
             nn.ConvTranspose2d(8, 1, 3, stride=1, padding=1), # b, 1, 4, 300
         )
-        # Evaluates confidence based on bottleneck features
-        self.critic = nn.Sequential(
-            nn.Conv2d(4, 1, 3, stride=1, padding=1), # b, 1, 1, 75
-            nn.Linear(75,30)
-            nn.Sigmoid() # Compress output to range [0,1]
-        )
 
     def forward(self, x):
         x = self.encoder(x)
         y = self.decoder(x)
-        c = self.critic(x)
-        return y, c
+        return y
+
+class Critic(nn.Module):
+    def __init__(self):
+        super(Critic, self).__init__()
+
+        # Evaluates confidence based conv_fcn of denoised output
+        self.critic = nn.Sequential(
+            nn.Conv2d(1, 8, (4,3), stride=1, padding=(0,1)), # b, 8, 1, 300
+            nn.Tanh(),
+            nn.MaxPool2d((1,2), stride=2), # b, 8, 1, 150
+            nn.Linear(150,30),
+            nn.Sigmoid() # Compress output to range [0,1]
+        )
+
+    def forward(self, x):
+        x = self.critic(x)
+        return x
 
 print("Step 1: Model Setup Done")
 
@@ -129,7 +138,8 @@ print("Step 1: Model Setup Done")
 CAE1 = ConvAutoEncoder() # Ensemble part 1 : Smoothing reconstruction
 CAE2 = ConvAutoEncoder() # Ensemble part 2 : Peak Reconstruction
 if cuda:
-    CAE.cuda()
+    CAE1.cuda()
+    CAE2.cuda()
 L1Loss = nn.L1Loss()
 
 # Define custom loss function based on morphological ROI
@@ -150,8 +160,7 @@ def confidenceloss(x, y, c):
     compressed = []
     for i in range(np.shape(L1)[1]):
         mean_error = np.mean(L1[i*10:(i+1)*10])
-        norm_error =
-        compressed.append()
+        compressed.append(mean_error)
     confidence = 1 - np.array(compressed)
     confidenceloss = abs(c - confidence)
     return confidence_loss
@@ -204,6 +213,9 @@ try:
 
             loss1, loss2 = customloss(smooth_recon, peak_recon, b_y, 5, 5)
             cfloss1, cfloss2 = confidenceloss(smooth_recon, b_y, cf1), confidenceloss(peak_recon, b_y, cf2)
+
+            torch.autograd.grad(smooth_recon)
+            torch.autograd.grad(cf1)
 
             optimizer1.zero_grad()
             (loss1, cfloss1).backward()
