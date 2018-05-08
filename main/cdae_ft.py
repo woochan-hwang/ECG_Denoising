@@ -9,7 +9,7 @@ import torch.utils.data as loader
 from chicken_selects import *
 import matplotlib.pyplot as plt
 
-params_dir = '{}/Trained_Params/Convolutional Autoencoder/newdata1_ft_nl3_2000/model.pth'.format(os.getcwd())
+params_dir = '{}/Trained_Params/Convolutional Autoencoder/v2_newdata1_5000/model.pth'.format(os.getcwd())
 print(params_dir)
 cuda = True if torch.cuda.is_available() else False
 print("CUDA: ", cuda)
@@ -55,10 +55,10 @@ if cuda:
     loss_func.cuda()
 
 # Hyper Parameters
-EPOCH = 10000
+EPOCH = 5000
 LR = 0.00003
 BATCH_SIZE = 128
-NOISE_LEVEL = 8
+NOISE_LEVEL = 4
 
 # Set optimizer
 optimizer = torch.optim.Adam(CAE.parameters(), lr=LR, weight_decay=1e-5)
