@@ -9,7 +9,6 @@ import numpy as np
 from chicken_selects import *
 import matplotlib.pyplot as plt
 
-
 # Checks file for appropirate model and prints availabe trained parameters
 if str(input("Load Conv Autoencoder model?(y/n): ")) == 'y':
     dir = "{}/Trained_Params/{}".format(os.getcwd(), 'Convolutional Autoencoder')
@@ -140,85 +139,80 @@ clean_ecg = trained_data.pull_all_ecg(tf = 240000) # Total of 14 recordings
 emg_noise = trained_data.pull_all_emg(tf = 10000) # 10,000 data points * 3 motions * 2 trials * 4 subjects
 acc_dat = trained_data.pull_all_acc(tf = 10000) # equiv to emg
 
-noiselevel = int(input("EMG noise level?: "))
+#noiselevel = int(input("EMG noise level?: "))
 
-# Remove mean, normalize to range (-1,1), adjust for noiselevel setting.
-clean_ecg[0,:] -= np.mean(clean_ecg[0,:])
-clean_ecg[0,:] = clean_ecg[0,:]/max(abs(clean_ecg[0,:]))
+for nl in range(1,9):
+    noiselevel = nl
+    # Remove mean, normalize to range (-1,1), adjust for noiselevel setting.
+    clean_ecg[0,:] -= np.mean(clean_ecg[0,:])
+    clean_ecg[0,:] = clean_ecg[0,:]/max(abs(clean_ecg[0,:]))
 
-emg_noise[0,:] -= np.mean(emg_noise[0,:])
-emg_noise[0,:] = (emg_noise[0,:]/max(abs(emg_noise[0,:])))*noiselevel
+    emg_noise[0,:] -= np.mean(emg_noise[0,:])
+    emg_noise[0,:] = (emg_noise[0,:]/max(abs(emg_noise[0,:])))*noiselevel
 
-for i in range(0,3):
-    acc_dat[i,:] -= np.mean(acc_dat[i,:])
-    acc_dat[i,:] = (acc_dat[i,:]/max(abs(acc_dat[i,:])))*float(noiselevel**(0.5))
-# Repeat the emg noise to each ecg recording
-repeats = np.shape(clean_ecg)[1]/np.shape(emg_noise)[1]
-emg_noise = np.array(list(emg_noise.transpose())*int(repeats)).transpose()
-acc_dat = np.array(list(acc_dat.transpose())*int(repeats)).transpose()
+    for i in range(0,3):
+        acc_dat[i,:] -= np.mean(acc_dat[i,:])
+        acc_dat[i,:] = (acc_dat[i,:]/max(abs(acc_dat[i,:])))*float(noiselevel**(0.5))
+    # Repeat the emg noise to each ecg recording
+    repeats = np.shape(clean_ecg)[1]/np.shape(emg_noise)[1]
+    emg_noise = np.array(list(emg_noise.transpose())*int(repeats)).transpose()
+    acc_dat = np.array(list(acc_dat.transpose())*int(repeats)).transpose()
 
-clean_acc = np.random.randn(np.shape(acc_dat)[0], np.shape(acc_dat)[1])*0.05 # N(0,0.05)
+    clean_acc = np.random.randn(np.shape(acc_dat)[0], np.shape(acc_dat)[1])*0.05 # N(0,0.05)
 
-# Generate noisy ECG by adding EMG noise
-noisy_ecg = clean_ecg + emg_noise
+    # Generate noisy ECG by adding EMG noise
+    noisy_ecg = clean_ecg + emg_noise
 
+    # Add ACC data onto clean/noisy ecg data
+    input_dat = np.vstack((noisy_ecg, acc_dat))
+    label_dat = np.vstack((clean_ecg, clean_acc))
 
-'''
-if emgfile == 'H2_emgdata':
-    clean_ecg = trained_data.pull_all_ecg(tf = 576000)
-    acc_dat = trained_data.pull_acc("overall_acc")
-    k = 6
-    acc = np.array(list(acc_dat[:, 0:24000].transpose()))
-else:
-    clean_ecg = trained_data.pull_all_ecg()
-    acc_dat = trained_data.pull_acc("upsampled_acc")
-    k = 27
-    acc = np.array(list(acc_dat[:, 0:6000].transpose()))
-noisy_ecg = trained_data.pull_all_emg(tf = 576000)
-print("noisy_ecg shape: {}".format(np.shape(noisy_ecg)))
-# Acc data modified to fit that of noisy emg. Adjust for increasing EMG ratio
-acc_dat = np.array((list(acc) + list(acc*1.4) +list(acc*1.7)+ list(acc*2))*int(k*trained_data.opened_emg/trained_data.opened_acc)).transpose()
-print("acc shape: {}".format(np.shape(acc_dat)))
+    # Reformat to shape that can be imported to neural net
+    input_dat = trained_data.reformat(input_dat, feature_len = trained_data.feature_len, data_form = trained_data.format)
+    label_dat = trained_data.reformat(label_dat, feature_len = trained_data.feature_len, data_form = trained_data.format)
 
-# Clean generated from gaussian dist, N(0, 0.05)
-clean_acc = np.random.randn(np.shape(acc_dat)[0], np.shape(acc_dat)[1]) *0.05
-'''
-# Add ACC data onto clean/noisy ecg data
-input_dat = np.vstack((noisy_ecg, acc_dat))
-label_dat = np.vstack((clean_ecg, clean_acc))
+    train_set, val_set = trained_data.data_splitter(input_dat, label_dat, shuffle = True, ratio = 4)
+    print("Step 1: Data Import Done")
 
-# Reformat to shape that can be imported to neural net
-input_dat = trained_data.reformat(input_dat, feature_len = trained_data.feature_len, data_form = trained_data.format)
-label_dat = trained_data.reformat(label_dat, feature_len = trained_data.feature_len, data_form = trained_data.format)
+#    if str(input("Continue(y/n)?: ")) == 'n':
+#        quit()
 
-train_set, val_set = trained_data.data_splitter(input_dat, label_dat, shuffle = True, ratio = 4)
-print("Step 1: Data Import Done")
+    # Generate tensors for training / validation
+    i_x, i_y = Variable(torch.from_numpy(train_set[:,0:1,:,:]).float()), train_set[:,1:2,:,:]
+    t_x, t_y = Variable(torch.from_numpy(val_set[:,0:1,:,:]).float()), val_set[:,1:2,:,:]
 
-if str(input("Continue(y/n)?: ")) == 'n':
-    quit()
-
-# Generate tensors for training / validation
-i_x, i_y = Variable(torch.from_numpy(train_set[:,0:1,:,:]).float()), train_set[:,1:2,:,:]
-t_x, t_y = Variable(torch.from_numpy(val_set[:,0:1,:,:]).float()), val_set[:,1:2,:,:]
-
-# Evaluate model on train data
-pred_i_y = mymodel(i_x)
-# Evaluate model on val data
-pred_t_y = mymodel(t_x)
-print("Step 2: Model Evaluation Finished")
+    # Evaluate model on train data
+    pred_i_y = mymodel(i_x)
+    # Evaluate model on val data
+    pred_t_y = mymodel(t_x)
+    print("Step 2: Model Evaluation Finished")
 
 
-print("Step 3: Plotting Results")
-# Change tensor output to numpy and undo reformatting
-pred_i_y = trained_data.undo_reformat(pred_i_y.data.numpy())
-pred_t_y = trained_data.undo_reformat(pred_t_y.data.numpy())
-i_x = trained_data.undo_reformat(i_x.data.numpy())
-t_x = trained_data.undo_reformat(t_x.data.numpy())
-i_y = trained_data.undo_reformat(i_y)
-t_y = trained_data.undo_reformat(t_y)
+    print("Step 3: Running Results")
+    # Change tensor output to numpy and undo reformatting
+    pred_i_y = trained_data.undo_reformat(pred_i_y.data.numpy())
+    pred_t_y = trained_data.undo_reformat(pred_t_y.data.numpy())
+    i_x = trained_data.undo_reformat(i_x.data.numpy())
+    t_x = trained_data.undo_reformat(t_x.data.numpy())
+    i_y = trained_data.undo_reformat(i_y)
+    t_y = trained_data.undo_reformat(t_y)
 
-avg_train_loss = np.average(train_loss[-50:])
-avg_val_loss = np.average(val_loss[-50:])
+    avg_train_loss = np.average(train_loss[-50:])
+    avg_val_loss = np.average(val_loss[-50:])
+
+    # Calculate SNR on validation set
+    def SNR(noisy_signal, clean_signal):
+        P_signal = sum(noisy_signal**2)
+        P_noise = sum((noisy_signal - clean_signal)**2)
+        return P_signal/P_noise
+
+    noisy_snr = SNR(t_x[0,:], t_y[0,:])
+    denoised_snr = SNR(pred_t_y[0,:], t_y[0,:])
+
+    print("SNR | NL {} | CDAE input | {}".format(nl, noisy_snr))
+    print("SNR | NL {} | CDAE output | {}".format(nl, denoised_snr))
+
+
 
 # Plot Results
 plot = str(input("Plot results(y/n)?: "))
