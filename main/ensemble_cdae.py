@@ -1,5 +1,7 @@
 # Convolutional denoising autoencoder (2 layers)
 # Written by Woochan H.
+# Ensemble model by kernel size. Added at final denoised output
+# Introduced confidence measure based on BN feature
 
 import torch
 import torch.nn as nn
@@ -125,12 +127,35 @@ class ConvAutoEncoder(nn.Module):
         )
 
     def forward(self, x):
-        x1 = self.encoder1(x)
-        x1 = self.decoder1(x1)
-        x2 = self.encoder2(x)
-        x2 = self.decoder2(x2)
-        avg = (x1 + x2)/2
-        return avg
+        x1_bn = self.encoder1(x)
+        x1 = self.decoder1(x1_bn)
+        x2_bn = self.encoder2(x)
+        x2 = self.decoder2(x2_bn)
+        return x1, x2, x1_bn, x2_bn
+
+class Critic(nn.Module):
+    def __init__(self):
+        super(Critic, self).__init__()
+
+        # Evaluates confidence based conv_fcn of denoised output
+        # Input: b, 4, 1, 75
+        self.critic = nn.Sequential(
+            nn.Conv2d(4, 1, 3, stride=1, padding=1), # b, 1, 1, 75
+            nn.Linear(75,30),
+            nn.Sigmoid() # Compress output to range [0,1]
+        )
+
+    def forward(self, x):
+        cf = self.critic(x)
+        return cf
+
+class Ensemble(nn.Module):
+    def __init__(self):
+        super(Ensemble, self).__init__()
+
+
+    def forward(self, ):
+        return
 
 print("Step 1: Model Setup Done")
 

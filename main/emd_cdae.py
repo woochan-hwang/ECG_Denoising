@@ -1,7 +1,5 @@
 # Convolutional denoising autoencoder (2 layers)
 # Written by Woochan H.
-# Ensemble model based on different filter size. Added BN features 
-# Introduced confidence measure
 
 import torch
 import torch.nn as nn
@@ -9,17 +7,12 @@ from torch.autograd import Variable
 import numpy as np
 import torch.utils.data as loader
 from chicken_selects import *
-
-#import matplotlib
-#if str(input("x11-backend?(y/n): ")) == 'y':
-#    matplotlib.use('GTKAgg')
-#    print("GTKAgg backend in use")
 import matplotlib.pyplot as plt
 
 print(torch.__version__)
 
 #noiselevel = int(input("EMG noise level?: "))
-noiselevel = 1
+noiselevel = 3
 # Object Data('model type', 'motion', noiselevel, cuda = False)
 data = Data('Convolutional Autoencoder', 'mixed', noiselevel = noiselevel)
 
@@ -92,9 +85,7 @@ class ConvAutoEncoder(nn.Module):
 
         # Zero padding is almost the same as average padding in this case
         # Input = b, 1, 4, 300
-
-        # Ensemple Model 1
-        self.encoder1 = nn.Sequential(
+        self.encoder = nn.Sequential(
             nn.Conv2d(1, 8, (4,3), stride=1, padding=(0,1)), # b, 8, 1, 300
             nn.Tanh(),
             nn.MaxPool2d((1,2), stride=2), # b, 8, 1, 150
@@ -102,18 +93,6 @@ class ConvAutoEncoder(nn.Module):
             nn.Tanh(),
             nn.MaxPool2d((1,2), stride=2) # b, 4, 1, 75
         )
-        # Emsemble Model 2
-        self.encoder2 = nn.Sequential(
-            nn.Conv2d(1, 8, (4,9), stride=1, padding=(0,4)), # b, 8, 1, 300
-            nn.Tanh(),
-            nn.MaxPool2d((1,2), stride=2), # b, 8, 1, 150
-            nn.Conv2d(8, 4, 3, stride=1, padding=1), # b, 8, 1, 150
-            nn.Tanh(),
-            nn.MaxPool2d((1,2), stride=2) # b, 4, 1, 75
-        )
-        # Concat bottleneck features
-        self.ensemble = nn.Linear(150,75) # b, 4, 1, 150 to b, 4, 1, 75
-        # Decoder
         self.decoder = nn.Sequential(
             nn.ConvTranspose2d(4, 8, 3, stride=2, padding=1, output_padding=(0,1)), # b, 8, 1, 150
             nn.Tanh(),
@@ -123,12 +102,9 @@ class ConvAutoEncoder(nn.Module):
         )
 
     def forward(self, x):
-        x1 = self.encoder1(x)
-        x2 = self.encoder2(x)
-        combined = torch.cat((x1, x2), -1)
-        y = self.ensemble(combined)
-        y = self.decoder(y)
-        return y
+        x = self.encoder(x)
+        x = self.decoder(x)
+        return x
 
 print("Step 1: Model Setup Done")
 
@@ -206,6 +182,6 @@ except KeyboardInterrupt:
 
 else:
     print("entering else statement")
-    save_model('Ensemble_cdaev2', 'Adam', 'L1Loss', LR)
+    save_model('EMD1_nl3', 'Adam', 'L1Loss', LR)
     print(os.listdir(os.getcwd()))
     print(os.getcwd())

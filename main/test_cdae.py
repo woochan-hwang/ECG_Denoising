@@ -141,7 +141,10 @@ acc_dat = trained_data.pull_all_acc(tf = 10000) # equiv to emg
 
 #noiselevel = int(input("EMG noise level?: "))
 
-for nl in range(1,9):
+for nl in range(1,10):
+    if nl == 9:
+        nl = input("What NL would you like to plot?: ")
+
     noiselevel = nl
     # Remove mean, normalize to range (-1,1), adjust for noiselevel setting.
     clean_ecg[0,:] -= np.mean(clean_ecg[0,:])
@@ -200,22 +203,25 @@ for nl in range(1,9):
     avg_train_loss = np.average(train_loss[-50:])
     avg_val_loss = np.average(val_loss[-50:])
 
-    # Calculate SNR on validation set
-    def SNR(noisy_signal, clean_signal):
-        P_signal = sum(noisy_signal**2)
-        P_noise = sum((noisy_signal - clean_signal)**2)
-        return P_signal/P_noise
+    if nl < 9:
+        # Calculate SNR on validation set
+        def SNR(noisy_signal, clean_signal):
+            P_signal = sum(noisy_signal**2)
+            P_noise = sum((noisy_signal - clean_signal)**2)
+            return P_signal/P_noise
 
-    noisy_snr = SNR(t_x[0,:], t_y[0,:])
-    denoised_snr = SNR(pred_t_y[0,:], t_y[0,:])
+        noisy_snr = SNR(t_x[0,:], t_y[0,:])
+        denoised_snr = SNR(pred_t_y[0,:], t_y[0,:])
 
-    print("SNR | NL {} | CDAE input | {}".format(nl, noisy_snr))
-    print("SNR | NL {} | CDAE output | {}".format(nl, denoised_snr))
+        print("SNR | NL {} | CDAE input | {}".format(nl, noisy_snr))
+        print("SNR | NL {} | CDAE output | {}".format(nl, denoised_snr))
 
-
+    else:
+        plot = str(input("Plot results(y/n)?: "))
+        if plot == 'n':
+            quit()
 
 # Plot Results
-plot = str(input("Plot results(y/n)?: "))
 print("Available data lenght: {}".format(np.shape(t_y)))
 
 while plot == 'y':

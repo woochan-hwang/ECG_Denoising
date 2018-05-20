@@ -1,5 +1,6 @@
 # Convolutional denoising autoencoder (2 layers)
 # Written by Woochan H.
+# Ensemble model based on LoG based morphological custom loss function 
 
 import torch
 import torch.nn as nn
