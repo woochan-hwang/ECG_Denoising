@@ -82,10 +82,11 @@ def EMDsplit(dataset):
         if y_len > 5:
             for imf in range(5, y_len):
                 y_IMFs[4,:] += y_IMFs[imf,:]
-        for j in range(x_len):
+        # Construct newdata array
+        for j in range(min(x_len,5)):
             newdata[i,j,0,:] = x_IMFs[j]
-        for j in range(y_len):
-            newdata[i,4+j,0,:] = y_IMFs[j]
+        for k in range(min(y_len,5)):
+            newdata[i,4+k,0,:] = y_IMFs[k]
         print("Step {}/{} done".format(i,samples))
         if x_len <5 or y_len <5:
             print("This step {} had a short EMD".format(i))
