@@ -207,13 +207,13 @@ for nl in range(1,10):
     def SNR(noisy_signal, clean_signal):
         P_signal = sum(noisy_signal**2)
         P_noise = sum((noisy_signal - clean_signal)**2)
-        return P_signal/P_noise
+        return 10*np.log10(P_signal/P_noise)
 
     noisy_snr = SNR(t_x[0,:], t_y[0,:])
     denoised_snr = SNR(pred_t_y[0,:], t_y[0,:])
 
-    print("SNR | NL {} | CDAE input | {}".format(nl, noisy_snr))
-    print("SNR | NL {} | CDAE output | {}".format(nl, denoised_snr))
+    print("SNR(dB) | NL {} | CDAE input | {}".format(nl, noisy_snr))
+    print("SNR(dB) | NL {} | CDAE output | {}".format(nl, denoised_snr))
 
 
 # Plot Results
