@@ -13,7 +13,7 @@ from chicken_selects import *
 from PyEMD import EMD
 
 #noiselevel = int(input("EMG noise level?: "))
-noiselevel = 3
+noiselevel = 5
 # Object Data('model type', 'motion', noiselevel, cuda = False)
 data = Data('Convolutional Autoencoder', 'mixed', noiselevel = noiselevel)
 
@@ -94,7 +94,7 @@ def EMDsplit(dataset):
     return newdata, short_samples
 
 def save_EMD(EMD, short_list):
-    dir = '{}/{}'.format(data.filepath, 'EMDs')
+    dir = '{}/{}'.format(data.filepath, 'EMDs_' + str(noiselevel))
     if not os.path.exists(dir):
         os.makedirs(dir)
     np.save(dir + '/EMDs.npy',EMD)
