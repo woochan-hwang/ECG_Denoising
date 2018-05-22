@@ -17,7 +17,8 @@ noiselevel = 3
 # Object Data('model type', 'motion', noiselevel, cuda = False)
 data = Data('Convolutional Autoencoder', 'mixed', noiselevel = noiselevel)
 
-# Object EMD from PyEMD package. Default Cauchy convergence. 
+# Object EMD from PyEMD package. Default Cauchy convergence.
+
 EMD = EMD()
 
 # Specify directory if you have changed folder name / dir
