@@ -170,8 +170,8 @@ try:
         for step, train_data in enumerate(train_loader):
 
             # Load IMFs from pre-run EMD
-            x_IMFs = train_data[:,0:4,:,:] # Adjust to new EMD
-            y_IMFs = train_data[:,4:10,:,:]
+            x_IMFs = train_data[:,0:4,:,:]
+            y_IMFs = train_data[:,5:10,:,:]
 
             # Construct Tensor Variable for each IMF order
             b_x1 = Variable(x_IMFs[:,0:1,:,:]).cuda() if cuda else Variable(x_IMFs[:,0:1,:,:])
@@ -205,13 +205,10 @@ try:
 
         # Evaluates current model state by reconstructing IMFs every 10 epochs
         if epoch % 10 == 0:
-            print(type(CAE1(Variable(emd_train[:,0:1,:,:]).cuda())))
-            print(type(CAE1(Variable(emd_train[:,0:1,:,:]).cuda()).data))
-            print(type(emd_train[:,:,:,:]))
-            train_pred = (CAE1(Variable(emd_train[:,0:1,:,:])).data + CAE2(Variable(emd_train[:,1:2,:,:])).data
-                          + CAE3(Variable(emd_train[:,2:3,:,:])).data + emd_train[:,3:4,:,:])
-            val_pred = (CAE1(Variable(emd_val[:,0:1,:,:])).data + CAE2(Variable(emd_val[:,1:2,:,:])).data
-                        + CAE3(Variable(emd_val[:,2:3,:,:])).data + emd_val[:,3:4,:,:])
+            train_pred = (CAE1(Variable(emd_train[:,0:1,:,:])).cpu().data + CAE2(Variable(emd_train[:,1:2,:,:])).cpu().data
+                          + CAE3(Variable(emd_train[:,2:3,:,:])).cpu().data + emd_train[:,3:4,:,:])
+            val_pred = (CAE1(Variable(emd_val[:,0:1,:,:])).cpu().data + CAE2(Variable(emd_val[:,1:2,:,:])).cpu().data
+                        + CAE3(Variable(emd_val[:,2:3,:,:])).cpu().data + emd_val[:,3:4,:,:])
             train_recon_loss = torch.mean(torch.sum(torch.abs(torch.add(-train_pred[:,0,0,:], train_set[:,1,0,:])), dim = 1))
             val_recon_loss = torch.mean(torch.sum(torch.abs(torch.add(-val_pred[:,0,0,:], val_set[:,1,0,:])), dim = 1))
             print('Recon loss: {} | Train set: {} | Val set: {}'.format(epoch + 1, train_recon_loss, val_recon_loss))
