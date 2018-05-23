@@ -164,13 +164,6 @@ try:
     # Generates mini_batchs for training. Loads data for validation.
     train_loader = loader.DataLoader(dataset = emd_train, batch_size = BATCH_SIZE, shuffle = True)
 
-    # Moves data and model to gpu if available
-    if cuda:
-        train_set.cuda()
-        val_set.cuda()
-        emd_train.cuda()
-        emd_val.cuda()
-
     print("Step 2: Model Training Start")
 
     for epoch in range(EPOCH):
