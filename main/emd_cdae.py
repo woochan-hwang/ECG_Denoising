@@ -16,6 +16,7 @@ import torch.utils.data as loader
 import numpy as np
 from chicken_selects import *
 from PyEMD import EMD
+import matplotlib.pyplot as plt
 
 print("Torch version: ", torch.__version__)
 
@@ -84,6 +85,13 @@ for i in range(5):
     emd_train[:,i+5,1:4,:] = train_set[:,1,1:4,:]
     emd_val[:,i,1:4,:] = val_set[:,1,1:4,:]
     emd_val[:,i+5,1:4,:] = val_set[:,0,1:4,:]
+
+#fig, (ax1, ax2, ax3, ax4, ax5) = plt.subplots(5, sharey=False)
+#ax1.plot(emd_train[4,5,0,:], color='k', linewidth=0.4, linestyle='-');
+#ax2.plot(emd_train[4,6,0,:], color='k', linewidth=0.4, linestyle='-');
+#ax3.plot(emd_train[4,7,0,:], color='k', linewidth=0.4, linestyle='-');
+#ax4.plot(emd_train[4,8,0,:], color='k', linewidth=0.4, linestyle='-');
+#ax5.plot(emd_train[4,9,0,:], color='k', linewidth=0.4, linestyle='-');
 
 print("Step 0: Data Import Done")
 
@@ -256,12 +264,12 @@ except KeyboardInterrupt:
 
     if str(input("Save Parameters?(y/n): ")) != 'n':
         save_name = str(input("Save parameters as?: ")) + '_Interrupted'
-        save_model(save_name, 'Adam', 'L1Loss', LR)
+        save_model(save_name, 'Adam', 'L1Loss', LR1)
     else:
         print("Session Terminated. Parameters not saved")
 
 else:
     print("entering else statement")
-    save_model('EMD_CDAE_v2_nl{}'.format(noiselevel), 'Adam', 'L1Loss', LR)
+    save_model('EMD_CDAE_v2_nl{}'.format(noiselevel), 'Adam', 'L1Loss', LR1)
     print(os.listdir(os.getcwd()))
     print(os.getcwd())
