@@ -297,9 +297,14 @@ class Processor(EnvSetter):
         k = int(feature_len)
         sample_num = np.shape(npver)[0]
         sig_len = sample_num*k
-        output = np.zeros((4, sample_num*k))
-        for i in range(1,sample_num):
-            output[:, k*i:k*(i+1)] = npver[i]
+        if np.shape(npver)[2] == 4:
+            output = np.zeros((4, sample_num*k))
+            for i in range(1,sample_num):
+                output[:, k*i:k*(i+1)] = npver[i]
+        elif np.shape(npver)[2] == 1:
+            output = np.zeros((1, sample_num*k))
+            for i in range(1,sample_num):
+                output[:, k*i:k*(i+1)] = npver[i]
         return np.array(output)
 
     # Formating into tensors usable in PyTorch. This is currently NOT wrapped in a Variable
