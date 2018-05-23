@@ -93,16 +93,19 @@ def EMDsplit(dataset):
             short_samples.append([i,x_len,y_len])
     return newdata, short_samples
 
-def save_EMD(EMD, short_list):
+def save_EMD(EMD_train, EMD_val, short_list_train, short_list_val):
     dir = '{}/Trained_Params/{}'.format(data.filepath, 'EMDs_' + str(noiselevel))
     if not os.path.exists(dir):
         os.makedirs(dir)
-    np.save(dir + '/EMDs.npy',EMD)
-    np.save(dir + '/short_list.npy',short_list)
+    np.save(dir + '/EMDs_train.npy',EMD_train)
+    np.save(dir + '/short_list_train.npy',short_list_train)
+    np.save(dir + '/EMDs_val.npy',EMD_val)
+    np.save(dir + '/short_list_val.npy',short_list_val)
     print("EMD Saved")
 
-train_EMD, short_list = EMDsplit(train_set)
-save_EMD(train_EMD, short_list)
+train_EMD, short_list_train = EMDsplit(train_set)
+val_EMD, short_list_val = EMDsplit(val_set)
+save_EMD(train_EMD, val_EMD, short_list_train, short_list_val)
 
 print(os.listdir(os.getcwd()))
 print(os.getcwd())
