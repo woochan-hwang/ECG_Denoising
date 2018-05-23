@@ -138,9 +138,6 @@ if cuda:
     CAE1.cuda()
     CAE2.cuda()
     CAE3.cuda()
-    optimizer1.cuda()
-    optimizer2.cuda()
-    optimizer3.cuda()
     loss_func.cuda()
 
 # Define model save function
