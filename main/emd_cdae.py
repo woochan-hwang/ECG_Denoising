@@ -204,15 +204,15 @@ try:
         train_loss.append((loss1.data[0], loss2.data[0], loss3.data[0]))
 
         # Evaluates current model state by reconstructing IMFs every 10 epochs
-        if epoch % 10 == 0:
-            train_pred = (CAE1(Variable(emd_train[:,0:1,:,:])).cpu().data + CAE2(Variable(emd_train[:,1:2,:,:])).cpu().data
-                          + CAE3(Variable(emd_train[:,2:3,:,:])).cpu().data + emd_train[:,3:4,:,:])
-            val_pred = (CAE1(Variable(emd_val[:,0:1,:,:])).cpu().data + CAE2(Variable(emd_val[:,1:2,:,:])).cpu().data
-                        + CAE3(Variable(emd_val[:,2:3,:,:])).cpu().data + emd_val[:,3:4,:,:])
-            train_recon_loss = torch.mean(torch.sum(torch.abs(torch.add(-train_pred[:,0,0,:], train_set[:,1,0,:])), dim = 1))
-            val_recon_loss = torch.mean(torch.sum(torch.abs(torch.add(-val_pred[:,0,0,:], val_set[:,1,0,:])), dim = 1))
-            print('Recon loss: {} | Train set: {} | Val set: {}'.format(epoch + 1, train_recon_loss, val_recon_loss))
-            val_loss.append((train_recon_loss,val_recon_loss))
+#        if epoch % 10 == 0:
+#            train_pred = (CAE1(Variable(emd_train[:,0:1,:,:])).cpu().data + CAE2(Variable(emd_train[:,1:2,:,:])).cpu().data
+#                          + CAE3(Variable(emd_train[:,2:3,:,:])).cpu().data + emd_train[:,3:4,:,:])
+#            val_pred = (CAE1(Variable(emd_val[:,0:1,:,:])).cpu().data + CAE2(Variable(emd_val[:,1:2,:,:])).cpu().data
+#                        + CAE3(Variable(emd_val[:,2:3,:,:])).cpu().data + emd_val[:,3:4,:,:])
+#            train_recon_loss = torch.mean(torch.sum(torch.abs(torch.add(-train_pred[:,0,0,:], train_set[:,1,0,:])), dim = 1))
+#            val_recon_loss = torch.mean(torch.sum(torch.abs(torch.add(-val_pred[:,0,0,:], val_set[:,1,0,:])), dim = 1))
+#            print('Recon loss: {} | Train set: {} | Val set: {}'.format(epoch + 1, train_recon_loss, val_recon_loss))
+#            val_loss.append((train_recon_loss,val_recon_loss))
 
     print("Step 2: Model Training Finished")
 
