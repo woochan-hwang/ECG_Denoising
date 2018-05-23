@@ -205,6 +205,9 @@ try:
 
         # Evaluates current model state by reconstructing IMFs every 10 epochs
         if epoch % 10 == 0:
+            print(type(CAE1(Variable(emd_train[:,0:1,:,:])))
+            print(type(CAE1(Variable(emd_train[:,0:1,:,:])).data))
+            print(type(emd_train[:,:,:,:]))
             train_pred = (CAE1(Variable(emd_train[:,0:1,:,:])).data + CAE2(Variable(emd_train[:,1:2,:,:])).data
                           + CAE3(Variable(emd_train[:,2:3,:,:])).data + emd_train[:,3:4,:,:])
             val_pred = (CAE1(Variable(emd_val[:,0:1,:,:])).data + CAE2(Variable(emd_val[:,1:2,:,:])).data
