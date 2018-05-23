@@ -1,6 +1,14 @@
 # Convolutional denoising autoencoder (2 layers)
 # Written by Woochan H.
+'''
+This method incorporates the concept of EMD(Empirical Mode Decomposition).
+Implementation is based on vanilla EMD with Cauchy Convergence.
 
+Parallel Conv Nets are trained to denoise each IMF component after applying EMD
+to the original signal. Then the final result is reconstructed from the clean IMFs.
+
+For the Conv Net, Version 3 is applied here with NL 3 as initial starting.
+'''
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
@@ -8,6 +16,7 @@ import numpy as np
 import torch.utils.data as loader
 from chicken_selects import *
 import matplotlib.pyplot as plt
+from PyEMD import EMD
 
 print(torch.__version__)
 
@@ -58,15 +67,12 @@ print("Label Data shape: {}".format(np.shape(label_dat)))
 
 train_set, val_set = data.data_splitter(input_dat, label_dat, shuffle = True, ratio = 4)
 
+emd_dir = '{}/EMDs...'.format(os.getcwd())
+
+
+
 print("Step 0: Data Import Done")
 
-#if str(input("Continue(y/n)?: ")) == 'n':
-#    quit()
-
-# Hyper Parameters
-#EPOCH = int(input("Epochs?: "))
-#LR = float(input("Learning rate?: "))
-#BATCH_SIZE = int(input("Batch size?: "))
 EPOCH = 5000
 LR = 0.0003
 BATCH_SIZE = 128
@@ -86,7 +92,7 @@ class ConvAutoEncoder(nn.Module):
         # Zero padding is almost the same as average padding in this case
         # Input = b, 1, 4, 300
         self.encoder = nn.Sequential(
-            nn.Conv2d(1, 8, (4,3), stride=1, padding=(0,1)), # b, 8, 1, 300
+            nn.Conv2d(1, 8, (4,7), stride=1, padding=(0,1)), # b, 8, 1, 300
             nn.Tanh(),
             nn.MaxPool2d((1,2), stride=2), # b, 8, 1, 150
             nn.Conv2d(8, 4, 3, stride=1, padding=1), # b, 8, 1, 150
@@ -109,15 +115,21 @@ class ConvAutoEncoder(nn.Module):
 print("Step 1: Model Setup Done")
 
 # Initialize network
-CAE = ConvAutoEncoder()
+CAE1 = ConvAutoEncoder() # IMF 1
+CAE2 = ConvAutoEncoder() # IMF 2
+CAE3 = ConvAutoEncoder() # IMF 3
 loss_func = nn.L1Loss()
 train_loss, val_loss = [], []
 if cuda:
-    CAE.cuda()
+    CAE1.cuda()
+    CAE2.cuda()
+    CAE3.cuda()
     loss_func.cuda()
 
 # Set optimizer
-optimizer = torch.optim.Adam(CAE.parameters(), lr=LR, weight_decay=1e-5)
+optimizer1 = torch.optim.Adam(CAE1.parameters(), lr=LR, weight_decay=1e-5)
+optimizer2 = torch.optim.Adam(CAE2.parameters(), lr=LR, weight_decay=1e-5)
+optimizer3 = torch.optim.Adam(CAE3.parameters(), lr=LR, weight_decay=1e-5)
 
 def save_model(save_name, optim, loss_f, lr, epoch = EPOCH):
     dir = '{}/Trained_Params/{}/{}_{}'.format(data.filepath, data.model, save_name, epoch)
@@ -142,31 +154,61 @@ def save_model(save_name, optim, loss_f, lr, epoch = EPOCH):
 try:
     # Generates mini_batchs for training. Loads data for validation.
     train_loader = loader.DataLoader(dataset = train_set, batch_size = BATCH_SIZE, shuffle = True)
-    v_x, v_y = Variable(val_set[:,0:1,:,:]), Variable(val_set[:,1:2,:,:])
 
+    print(np.shape(val_set[:,0:1,:,:]))
+    v_x_IMFs = EMD(val_set[:,0:1,:,:])
+
+    v_x1 = Variable(torch.from_numpy(v_x_IMFs[0]).float())
+    v_x2 = Variable(torch.from_numpy(v_x_IMFs[1]).float())
+    v_x3 = Variable(torch.from_numpy(v_x_IMFs[2]).float())
+
+    v_y = Variable(torch.from_numpy(val_set[:,1:2,:,:]).float())
     # Moves data and model to gpu if available
     if cuda:
-        v_x, v_y = v_x.cuda(), v_y.cuda()
+        v_x1, v_x2, v_x3, v_y = v_x1.cuda(), v_x2.cuda(), v_x3.cuda(), v_y.cuda()
 
     print("Step 2: Model Training Start")
 
     for epoch in range(EPOCH):
         for step, train_data in enumerate(train_loader):
 
-            b_x = Variable(train_data[:,0:1,:,:]).cuda() if cuda else Variable(train_data[:,0:1,:,:])
-            b_y = Variable(train_data[:,1:2,:,:]).cuda() if cuda else Variable(train_data[:,1:2,:,:])
+            # Run EMD
+            x_IMFs = EMD(train_data[:,0:1,:,:])
+            y_IMFs = EMD(train_data[:,1:2,:,:])
 
-            de = CAE(b_x)
-            loss = loss_func(de, b_y)
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
+            # Construct Tensor Variable for each IMF component
+            b_x1 = Variable(x_IMFs[0]).cuda() if cuda else Variable(x_IMFs[0])
+            b_y1 = Variable(y_IMFs[0]).cuda() if cuda else Variable(y_IMFs[0])
+
+            b_x2 = Variable(x_IMFs[1]).cuda() if cuda else Variable(x_IMFs[1])
+            b_y2 = Variable(y_IMFs[1]).cuda() if cuda else Variable(y_IMFs[1])
+
+            b_x3 = Variable(x_IMFs[2]).cuda() if cuda else Variable(x_IMFs[2])
+            b_y3 = Variable(y_IMFs[2]).cuda() if cuda else Variable(y_IMFs[2])
+
+            de1, de2, de3 = CAE1(b_x1), CAE2(b_x2), CAE3(b_x3)
+
+            loss1 = loss_func(de1, b_y1)
+            optimizer1.zero_grad()
+            loss1.backward()
+            optimizer1.step()
+
+            loss2 = loss_func(de2, b_y2)
+            optimizer2.zero_grad()
+            loss2.backward()
+            optimizer2.step()
+
+            loss3 = loss_func(de3, b_y3)
+            optimizer3.zero_grad()
+            loss3.backward()
+            optimizer3.step()
 
         # Evaluates current model state on val data set
-        pred = CAE(v_x)
+        pred = CAE1(v_x1).numpy() + CAE2(v_x2).numpy() + CAE3(v_x3).numpy() + v_x_IMFs[3] + v_x_IMFs[4] + v_x_IMFs[5]
+        pred = Variable(torch.from_numpy(pred).float())
         loss_val_set = loss_func(pred, v_y)
-        print('Epoch: {} | train loss: {:.4f} | val loss: {:.4f}'.format(epoch+1, loss.data[0], loss_val_set.data[0]))
-        train_loss.append(loss.data[0])
+        print('Epoch: {} | IMF 1 loss: {:.4f} | val loss: {:.4f}'.format(epoch+1, loss1.data[0], loss_val_set.data[0]))
+        train_loss.append((loss1.data[0], loss2.data[1], loss3.data[2]))
         val_loss.append(loss_val_set.data[0])
 
     print("Step 2: Model Training Finished")
