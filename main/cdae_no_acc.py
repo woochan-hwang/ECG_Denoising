@@ -86,7 +86,7 @@ class ConvAutoEncoder(nn.Module):
         # Zero padding is almost the same as average padding in this case
         # Input = b, 1, 4, 300
         self.encoder = nn.Sequential(
-            nn.Conv2d(1, 8, (4,7), stride=1, padding=(0,1)), # b, 8, 1, 300
+            nn.Conv2d(1, 8, (4,7), stride=1, padding=(0,3)), # b, 8, 1, 300
             nn.Tanh(),
             nn.MaxPool2d((1,2), stride=2), # b, 8, 1, 150
             nn.Conv2d(8, 4, 3, stride=1, padding=1), # b, 8, 1, 150
