@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 print(torch.__version__)
 
 #noiselevel = int(input("EMG noise level?: "))
-noiselevel = 5
+noiselevel = 3
 # Object Data('model type', 'motion', noiselevel, cuda = False)
 data = Data('Convolutional Autoencoder', 'mixed', noiselevel = noiselevel)
 
