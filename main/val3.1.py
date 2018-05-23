@@ -73,7 +73,7 @@ train_set, val_set = data.data_splitter(input_dat, label_dat, shuffle = True, ra
 
 print("Step 0: Data Import Done")
 
-EPOCH = 5000
+EPOCH = 1000
 LR = 0.0003
 BATCH_SIZE = 128
 
@@ -102,9 +102,9 @@ class ConvAutoEncoder(nn.Module):
         self.decoder = nn.Sequential(
             nn.ConvTranspose2d(4, 8, 3, stride=2, padding=1, output_padding=(0,1)), # b, 8, 1, 150
             nn.Tanh(),
-            nn.ConvTranspose2d(8, 8, 3, stride=2, padding=(0,1), output_padding=1), # b, 8, 4, 300
+            nn.ConvTranspose2d(8, 8, 3, stride=2, padding=1, output_padding=(0,1)), # b, 8, 1, 300
             nn.Tanh(),
-            nn.ConvTranspose2d(8, 1, 3, stride=1, padding=1), # b, 1, 4, 300
+            nn.ConvTranspose2d(8, 1, 3, stride=1, padding=1), # b, 1, 1, 300
         )
 
     def forward(self, x):
@@ -148,7 +148,7 @@ def save_model(save_name, optim, loss_f, lr, epoch = EPOCH):
 try:
     # Generates mini_batchs for training. Loads data for validation.
     train_loader = loader.DataLoader(dataset = train_set, batch_size = BATCH_SIZE, shuffle = True)
-    v_x, v_y = Variable(val_set[:,0:1,:,:]), Variable(val_set[:,1:2,:,:])
+    v_x, v_y = Variable(val_set[:,0:1,:,:]), Variable(val_set[:,1:2,0,:])
 
     # Moves data and model to gpu if available
     if cuda:
@@ -160,7 +160,7 @@ try:
         for step, train_data in enumerate(train_loader):
 
             b_x = Variable(train_data[:,0:1,:,:]).cuda() if cuda else Variable(train_data[:,0:1,:,:])
-            b_y = Variable(train_data[:,1:2,:,:]).cuda() if cuda else Variable(train_data[:,1:2,:,:])
+            b_y = Variable(train_data[:,1:2,0,:]).cuda() if cuda else Variable(train_data[:,1:2,0,:])
 
             de = CAE(b_x)
             loss = loss_func(de, b_y)
