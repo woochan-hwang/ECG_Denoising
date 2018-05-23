@@ -88,7 +88,9 @@ for i in range(5):
 print("Step 0: Data Import Done")
 
 EPOCH = 5000
-LR = 0.0001
+LR1 = 0.0003
+LR2 = 0.00003
+LR3 = 0.00003
 BATCH_SIZE = 128
 
 cuda = True if torch.cuda.is_available() else False
@@ -144,9 +146,9 @@ if cuda:
     loss_func.cuda()
 
 # Set optimizer
-optimizer1 = torch.optim.Adam(CAE1.parameters(), lr=LR, weight_decay=1e-5)
-optimizer2 = torch.optim.Adam(CAE2.parameters(), lr=LR, weight_decay=1e-5)
-optimizer3 = torch.optim.Adam(CAE3.parameters(), lr=LR, weight_decay=1e-5)
+optimizer1 = torch.optim.Adam(CAE1.parameters(), lr=LR1, weight_decay=1e-5)
+optimizer2 = torch.optim.Adam(CAE2.parameters(), lr=LR2, weight_decay=1e-5)
+optimizer3 = torch.optim.Adam(CAE3.parameters(), lr=LR3, weight_decay=1e-5)
 
 # Define model save function
 def save_model(save_name, optim, loss_f, lr, epoch = EPOCH):
