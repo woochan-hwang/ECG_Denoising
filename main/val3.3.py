@@ -188,6 +188,6 @@ except KeyboardInterrupt:
 
 else:
     print("entering else statement")
-    save_model('3.3', 'Adam', 'L1Loss', LR)
+    save_model('3.3_new', 'Adam', 'L1Loss', LR)
     print(os.listdir(os.getcwd()))
     print(os.getcwd())
