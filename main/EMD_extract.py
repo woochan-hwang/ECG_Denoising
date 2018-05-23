@@ -94,7 +94,7 @@ def EMDsplit(dataset):
     return newdata, short_samples
 
 def save_EMD(EMD, short_list):
-    dir = '{}/{}'.format(data.filepath, 'EMDs_' + str(noiselevel))
+    dir = '{}/Trained_Params/{}'.format(data.filepath, 'EMDs_' + str(noiselevel))
     if not os.path.exists(dir):
         os.makedirs(dir)
     np.save(dir + '/EMDs.npy',EMD)
