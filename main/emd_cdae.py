@@ -129,16 +129,16 @@ CAE3 = ConvAutoEncoder() # IMF 3
 loss_func = nn.L1Loss()
 train_loss, val_loss = [], [] # Train loss is loss of IMF_CAEs. Val loss is reconstruction loss
 
-# Set optimizer
-optimizer1 = torch.optim.Adam(CAE1.parameters(), lr=LR, weight_decay=1e-5)
-optimizer2 = torch.optim.Adam(CAE2.parameters(), lr=LR, weight_decay=1e-5)
-optimizer3 = torch.optim.Adam(CAE3.parameters(), lr=LR, weight_decay=1e-5)
-
 if cuda:
     CAE1.cuda()
     CAE2.cuda()
     CAE3.cuda()
     loss_func.cuda()
+
+# Set optimizer
+optimizer1 = torch.optim.Adam(CAE1.parameters(), lr=LR, weight_decay=1e-5)
+optimizer2 = torch.optim.Adam(CAE2.parameters(), lr=LR, weight_decay=1e-5)
+optimizer3 = torch.optim.Adam(CAE3.parameters(), lr=LR, weight_decay=1e-5)
 
 # Define model save function
 def save_model(save_name, optim, loss_f, lr, epoch = EPOCH):
