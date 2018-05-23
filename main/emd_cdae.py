@@ -1,4 +1,4 @@
-# Convolutional denoising autoencoder (2 layers)
+# EMD based Convolutional denoising autoencoder (2 layers)
 # Written by Woochan H.
 '''
 This method incorporates the concept of EMD(Empirical Mode Decomposition).
@@ -12,15 +12,14 @@ For the Conv Net, Version 3 is applied here with NL 3 as initial starting.
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
-import numpy as np
 import torch.utils.data as loader
+import numpy as np
 from chicken_selects import *
-import matplotlib.pyplot as plt
 from PyEMD import EMD
 
 print("Torch version: ", torch.__version__)
 
-#noiselevel = int(input("EMG noise level?: "))
+# Noise level = Max amplitude ratio ( normalized EMG / ECG )
 noiselevel = 3
 # Object Data('model type', 'motion', noiselevel, cuda = False)
 data = Data('EMD Convolutional Autoencoder', 'mixed', noiselevel = noiselevel)
@@ -30,7 +29,7 @@ data.set_ecg_filepath()
 data.set_emg_filepath(filepath = 'emgdata_final')
 data.set_acc_filepath(filepath = 'accdata_final')
 
-# Call data into numpy array format. Check soure code for additional input specifications
+# Call data into numpy array format. Check source for additional input specifications
 clean_ecg = data.pull_all_ecg(tf = 240000) # Total of 14 recordings
 emg_noise = data.pull_all_emg(tf = 10000) # 10,000 data points * 3 motions * 2 trials * 4 subjects
 acc_dat = data.pull_all_acc(tf = 10000) # equiv to emg
@@ -42,9 +41,11 @@ clean_ecg[0,:] = clean_ecg[0,:]/max(abs(clean_ecg[0,:]))
 emg_noise[0,:] -= np.mean(emg_noise[0,:])
 emg_noise[0,:] = (emg_noise[0,:]/max(abs(emg_noise[0,:])))*data.noiselevel
 
+# Acc data max amplitude to sqrt(noiselevel)
 for i in range(0,3):
     acc_dat[i,:] -= np.mean(acc_dat[i,:])
     acc_dat[i,:] = (acc_dat[i,:]/max(abs(acc_dat[i,:])))*float(data.noiselevel**(0.5))
+
 # Repeat the emg noise to each ecg recording
 repeats = np.shape(clean_ecg)[1]/np.shape(emg_noise)[1]
 emg_noise = np.array(list(emg_noise.transpose())*int(repeats)).transpose()
@@ -145,10 +146,14 @@ def save_model(save_name, optim, loss_f, lr, epoch = EPOCH):
     dir = '{}/Trained_Params/{}/{}_{}'.format(data.filepath, data.model, save_name, epoch)
     if not os.path.exists(dir):
         os.makedirs(dir)
-    CAE.cpu()
+    CAE1.cpu()
+    CAE2.cpu()
+    CAE3.cpu()
     data.cuda_off()
     torch.save({'data_setting': data,
-                'state_dict': CAE.state_dict(),
+                'state_dict_1': CAE1.state_dict(),
+                'state_dict_2': CAE2.state_dict(),
+                'state_dict_3': CAE3.state_dict(),
                 'epoch': epoch,
                 'optimizer': optim,
                 'loss_function': loss_f,
