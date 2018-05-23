@@ -13,7 +13,7 @@ from chicken_selects import *
 from PyEMD import EMD
 
 #noiselevel = int(input("EMG noise level?: "))
-noiselevel = 3
+noiselevel = 5
 # Object Data('model type', 'motion', noiselevel, cuda = False)
 data = Data('Convolutional Autoencoder', 'mixed', noiselevel = noiselevel)
 
