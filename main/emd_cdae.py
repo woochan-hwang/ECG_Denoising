@@ -78,10 +78,17 @@ print("Data load complete: EMD file shape | {}".format(np.shape(emd_train)))
 print("Samples with less than 5 EMDs: ", np.shape(missing_train)[0] + np.shape(missing_val)[0])
 print("EMD_ECG size match: ", np.shape(train_set)[0] == np.shape(emd_train)[0]
       and np.shape(val_set)[0] == np.shape(emd_val)[0])
+
+for i in range(5):
+    emd_train[:,i,1:4,:] = train_set[:,0,1:4,:]
+    emd_train[:,i+5,1:4,:] = train_set[:,1,1:4,:]
+    emd_val[:,i,1:4,:] = val_set[:,1,1:4,:]
+    emd_val[:,i+5,1:4,:] = val_set[:,0,1:4,:]
+
 print("Step 0: Data Import Done")
 
 EPOCH = 5000
-LR = 0.0003
+LR = 0.0001
 BATCH_SIZE = 128
 
 cuda = True if torch.cuda.is_available() else False
@@ -104,16 +111,16 @@ class ConvAutoEncoder(nn.Module):
             nn.Conv2d(1, 8, (4,7), stride=1, padding=(0,3)), # b, 8, 1, 300
             nn.Tanh(),
             nn.MaxPool2d((1,2), stride=2), # b, 8, 1, 150
-            nn.Conv2d(8, 4, 3, stride=1, padding=1), # b, 8, 1, 150
+            nn.Conv2d(8, 4, 3, stride=1, padding=1), # b, 4, 1, 150
             nn.Tanh(),
             nn.MaxPool2d((1,2), stride=2) # b, 4, 1, 75
         )
         self.decoder = nn.Sequential(
             nn.ConvTranspose2d(4, 8, 3, stride=2, padding=1, output_padding=(0,1)), # b, 8, 1, 150
             nn.Tanh(),
-            nn.ConvTranspose2d(8, 8, 3, stride=2, padding=(0,1), output_padding=1), # b, 8, 4, 300
+            nn.ConvTranspose2d(8, 8, 3, stride=2, padding=1, output_padding=(0,1)), # b, 8, 1, 300
             nn.Tanh(),
-            nn.ConvTranspose2d(8, 1, 3, stride=1, padding=1), # b, 1, 4, 300
+            nn.ConvTranspose2d(8, 1, 3, stride=1, padding=1), # b, 1, 1, 300
         )
 
     def forward(self, x):
@@ -176,7 +183,7 @@ try:
 
             # Load IMFs from pre-run EMD
             x_IMFs = train_data[:,0:4,:,:]
-            y_IMFs = train_data[:,5:10,:,:]
+            y_IMFs = train_data[:,5:10,0:1,:]
 
             # Construct Tensor Variable for each IMF order
             b_x1 = Variable(x_IMFs[:,0:1,:,:]).cuda() if cuda else Variable(x_IMFs[:,0:1,:,:])
@@ -209,7 +216,28 @@ try:
         train_loss.append((loss1.data[0], loss2.data[0], loss3.data[0]))
 
         # Evaluates current model state by reconstructing IMFs every 10 epochs
-#        if epoch % 10 == 0:
+        if epoch % 10 == 0:
+            x_IMFs = emd_val[:,0:4,:,:]
+            y_IMFs = emd_val[:,5:10,0:1,:]
+
+            # Construct Tensor Variable for each IMF order
+            b_x1 = Variable(x_IMFs[:,0:1,:,:]).cuda() if cuda else Variable(x_IMFs[:,0:1,:,:])
+            b_y1 = Variable(y_IMFs[:,0:1,:,:]).cuda() if cuda else Variable(y_IMFs[:,0:1,:,:])
+
+            b_x2 = Variable(x_IMFs[:,1:2,:,:]).cuda() if cuda else Variable(x_IMFs[:,1:2,:,:])
+            b_y2 = Variable(y_IMFs[:,1:2,:,:]).cuda() if cuda else Variable(y_IMFs[:,1:2,:,:])
+
+            b_x3 = Variable(x_IMFs[:,2:3,:,:]).cuda() if cuda else Variable(x_IMFs[:,2:3,:,:])
+            b_y3 = Variable(y_IMFs[:,2:3,:,:]).cuda() if cuda else Variable(y_IMFs[:,2:3,:,:])
+
+            de1, de2, de3 = CAE1(b_x1), CAE2(b_x2), CAE3(b_x3)
+
+            loss1 = loss_func(de1, b_y1)
+            loss2 = loss_func(de2, b_y2)
+            loss3 = loss_func(de3, b_y3)
+            print('Validation loss: {} | IMF 1: {:.4f} | IMF 2: {:.4f} | IMF 3: {:.4f}'.format(epoch+1, loss1.data[0], loss2.data[0], loss3.data[0]))
+            val_loss.append((loss1.data[0], loss2.data[0], loss3.data[0]))
+
 #            train_pred = (CAE1(Variable(emd_train[:,0:1,:,:])).cpu().data + CAE2(Variable(emd_train[:,1:2,:,:])).cpu().data
 #                          + CAE3(Variable(emd_train[:,2:3,:,:])).cpu().data + emd_train[:,3:4,:,:])
 #            val_pred = (CAE1(Variable(emd_val[:,0:1,:,:])).cpu().data + CAE2(Variable(emd_val[:,1:2,:,:])).cpu().data
@@ -232,6 +260,6 @@ except KeyboardInterrupt:
 
 else:
     print("entering else statement")
-    save_model('EMD_CDAE_nl{}'.format(noiselevel), 'Adam', 'L1Loss', LR)
+    save_model('EMD_CDAE_v2_nl{}'.format(noiselevel), 'Adam', 'L1Loss', LR)
     print(os.listdir(os.getcwd()))
     print(os.getcwd())
