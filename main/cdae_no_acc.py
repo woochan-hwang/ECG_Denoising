@@ -3,7 +3,7 @@
 '''
 The input of this data has been given gaussian noise in place of the normal
 accelerometer data to see if the denoising properties are inherent in the
-cnn or structure rather than actually exploiting the accelerometer data. 
+cnn or structure rather than actually exploiting the accelerometer data.
 '''
 import torch
 import torch.nn as nn
@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 print(torch.__version__)
 
 #noiselevel = int(input("EMG noise level?: "))
-noiselevel = 1
+noiselevel = 3
 # Object Data('model type', 'motion', noiselevel, cuda = False)
 data = Data('Convolutional Autoencoder', 'mixed', noiselevel = noiselevel)
 
@@ -50,6 +50,10 @@ clean_acc = np.random.randn(np.shape(acc_dat)[0], np.shape(acc_dat)[1])*0.05 # N
 # Generate noisy ECG by adding EMG noise
 noisy_ecg = clean_ecg + emg_noise
 
+'''
+This is where I edited the code to input zero mean white noise acc in place of
+the actual acc data. the import and config code above has been left cause i cba.
+'''
 # Add ACC data onto clean/noisy ecg data
 input_dat = np.vstack((noisy_ecg, clean_acc))
 label_dat = np.vstack((clean_ecg, clean_acc))
@@ -63,15 +67,7 @@ print("Label Data shape: {}".format(np.shape(label_dat)))
 train_set, val_set = data.data_splitter(input_dat, label_dat, shuffle = True, ratio = 4)
 
 print("Step 0: Data Import Done")
-
-#if str(input("Continue(y/n)?: ")) == 'n':
-#    quit()
-
-# Hyper Parameters
-#EPOCH = int(input("Epochs?: "))
-#LR = float(input("Learning rate?: "))
-#BATCH_SIZE = int(input("Batch size?: "))
-EPOCH = 2000
+EPOCH = 5000
 LR = 0.0003
 BATCH_SIZE = 128
 
@@ -90,7 +86,7 @@ class ConvAutoEncoder(nn.Module):
         # Zero padding is almost the same as average padding in this case
         # Input = b, 1, 4, 300
         self.encoder = nn.Sequential(
-            nn.Conv2d(1, 8, (4,3), stride=1, padding=(0,1)), # b, 8, 1, 300
+            nn.Conv2d(1, 8, (4,7), stride=1, padding=(0,1)), # b, 8, 1, 300
             nn.Tanh(),
             nn.MaxPool2d((1,2), stride=2), # b, 8, 1, 150
             nn.Conv2d(8, 4, 3, stride=1, padding=1), # b, 8, 1, 150
@@ -186,6 +182,6 @@ except KeyboardInterrupt:
 
 else:
     print("entering else statement")
-    save_model('newdata1', 'Adam', 'L1Loss', LR)
+    save_model('cdae_no_accdata_nl_{}'.format(noiselevel), 'Adam', 'L1Loss', LR)
     print(os.listdir(os.getcwd()))
     print(os.getcwd())
