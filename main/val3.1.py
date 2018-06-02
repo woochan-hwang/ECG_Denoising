@@ -73,7 +73,7 @@ train_set, val_set = data.data_splitter(input_dat, label_dat, shuffle = True, ra
 
 print("Step 0: Data Import Done")
 
-EPOCH = 1000
+EPOCH = 5000
 LR = 0.0003
 BATCH_SIZE = 128
 
